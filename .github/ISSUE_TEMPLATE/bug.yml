@@ -1,0 +1,51 @@
+name: Bug
+description: Report and track a bug
+title: "fix: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom
+      description: What is happening?
+      placeholder: Describe the incorrect behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: cause
+    attributes:
+      label: Suspected Cause
+      description: Optional notes about probable cause.
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Fix Tasks
+      placeholder: |
+        - [ ] Reproduce locally
+        - [ ] Implement fix
+        - [ ] Regression check
+    validations:
+      required: true

@@ -1,0 +1,60 @@
+name: Feature
+description: Propose and track a new feature
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What are we building?
+      placeholder: Add a short summary.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal / User Value
+      description: Why this feature matters.
+      placeholder: Explain expected user value.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: In-scope and out-of-scope.
+      placeholder: |
+        In scope:
+        -
+        Out of scope:
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Break down into implementation tasks.
+      placeholder: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: Checklist before closing this issue.
+      placeholder: |
+        - [ ] Behavior works locally
+        - [ ] Docs updated
+        - [ ] No unrelated file changes
+    validations:
+      required: true

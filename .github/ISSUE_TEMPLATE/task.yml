@@ -1,0 +1,32 @@
+name: Task
+description: Small implementation task or housekeeping
+title: "chore: "
+labels:
+  - chore
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: Background
+      description: Why this task is needed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+      description: Concrete action to take.
+      placeholder: Describe the change in one sentence.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
