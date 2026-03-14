@@ -35,3 +35,5 @@ py manage.py runserver
 - Development workflow and branch policy: docs/WORKFLOW.md
 - Roadmap and milestones: docs/ROADMAP.md
 - Issue templates and workflow: docs/ISSUE_WORKFLOW.md
+- Milestone plan: docs/MILESTONE_PLAN.md
+- Milestone issue seeds: docs/ISSUE_SEEDS.md
