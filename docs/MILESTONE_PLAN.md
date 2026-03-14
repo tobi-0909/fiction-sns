@@ -1,7 +1,6 @@
 # Milestone Plan
 
 ## Milestone 1 (1 to 2 weeks)
-
 Goal:
 - Local Django app runs reliably
 - Custom top page is shown
@@ -18,7 +17,6 @@ Exit criteria:
 - GitHub has clear issue/commit trace
 
 ## Milestone 2 (2 to 4 weeks)
-
 Goal:
 - Authentication and basic CRUD for World and Character
 
@@ -28,7 +26,6 @@ Planned outcome:
 - Character create/edit linked to world
 
 ## Milestone 3 (3 to 6 weeks)
-
 Goal:
 - Human-authored timeline flow for each world
 
@@ -38,7 +35,6 @@ Planned outcome:
 - Mobile-first timeline readability
 
 ## Milestone 4 (2 to 3 weeks)
-
 Goal:
 - Public deployment for smartphone access
 
@@ -46,7 +42,6 @@ Planned outcome:
 - Hosted URL and end-to-end check from phone
 
 ## Milestone 5+
-
 Goal:
 - AI-assisted generation and reading support
 

@@ -4,6 +4,10 @@ Fiction SNS is an experimental project for a social timeline app where fictional
 
 Current implementation in this repository is a Django prototype. The long-term target stack is Next.js + TypeScript + PostgreSQL + Prisma.
 
+## Current Scope
+- Final vision: AI Character SNS
+- Current implementation scope: milestones 1 to 3 (no AI integration yet)
+
 ## Quick Start (Current Django Prototype)
 
 1. Create and activate virtual environment (first time only):
@@ -33,7 +37,7 @@ py manage.py runserver
 
 - Project direction and architecture: docs/PROJECT_GUIDE.md
 - Development workflow and branch policy: docs/WORKFLOW.md
-- Roadmap and milestones: docs/ROADMAP.md
-- Issue templates and workflow: docs/ISSUE_WORKFLOW.md
-- Milestone plan: docs/MILESTONE_PLAN.md
-- Milestone issue seeds: docs/ISSUE_SEEDS.md
+- Product roadmap (existing): docs/ROADMAP.md
+- Milestone and issue operations: docs/ISSUE_WORKFLOW.md
+- Milestone plan and issue seeds: docs/MILESTONE_PLAN.md, docs/ISSUE_SEEDS.md
+- Working execution docs (new): docs/roadmap.md, docs/milestones.md, docs/status.md
