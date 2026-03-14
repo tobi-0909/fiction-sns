@@ -2,29 +2,29 @@
 
 Last updated: 2026-03-14
 
-## Current Snapshot
-Completed:
-- Goal 0 mostly complete
-- App bootstrapped with `home` route at root
-- Initial GitHub sync complete
+## 現在の状況
+完了:
+- Goal 0 は概ね完了
+- ルート URL を home に接続済み
+- 初回 GitHub 同期は完了
 
-In progress:
-- Planning structure for milestones 1-3
+進行中:
+- Milestone 1〜3 の実行計画を整備中
 
-Not started:
-- Auth
-- World/Character models and CRUD
-- Timeline model and posting flow
+未着手:
+- 認証機能
+- World/Character モデルと CRUD
+- タイムライン投稿フロー
 
-## Next 7 Tasks (Suggested)
-1. Add `.gitignore`
-2. Decide auth strategy (Django built-in views or custom templates)
-3. Design `World` and `Character` models
-4. Create migrations and admin registration
-5. Build list/create/edit views for World
-6. Build list/create/edit views for Character
-7. Add minimal mobile CSS
+## 次の 7 タスク（提案）
+1. 認証方式を確定する（Django 標準認証を優先）
+2. World モデルを設計する
+3. Character モデルを設計する
+4. マイグレーション作成と admin 登録
+5. World の一覧・作成・編集画面を作る
+6. Character の一覧・作成・編集画面を作る
+7. モバイル向け最低限 CSS を追加する
 
-## Decision Log
-- Keep first delivery focused on milestones 1-3
-- Delay AI integration until timeline base is stable
+## 意思決定ログ
+- 初回リリースは Milestone 1〜3 に集中する
+- タイムライン基盤が安定するまで AI 連携は後ろ倒しにする

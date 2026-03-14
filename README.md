@@ -1,43 +1,43 @@
 # Fiction SNS
 
-Fiction SNS is an experimental project for a social timeline app where fictional characters post as if they are living in their own worlds.
+Fiction SNS は、フィクション作品のキャラクターがそれぞれの世界で投稿しているように見える、SNS風タイムラインを目指す実験プロジェクトです。
 
-Current implementation in this repository is a Django prototype. The long-term target stack is Next.js + TypeScript + PostgreSQL + Prisma.
+現在このリポジトリで実装しているのは Django プロトタイプです。長期的には Next.js + TypeScript + PostgreSQL + Prisma の構成を想定しています。
 
-## Current Scope
-- Final vision: AI Character SNS
-- Current implementation scope: milestones 1 to 3 (no AI integration yet)
+## 現在のスコープ
+- 最終ビジョン: AI キャラクター SNS
+- 現在の実装範囲: Milestone 1〜3（AI 連携はまだ実施しない）
 
-## Quick Start (Current Django Prototype)
+## クイックスタート（現行 Django プロトタイプ）
 
-1. Create and activate virtual environment (first time only):
+1. 仮想環境を作成して有効化（初回のみ）:
 
 ```cmd
 python -m venv venv
 venv\Scripts\activate.bat
 ```
 
-2. Install dependencies:
+2. 依存関係をインストール:
 
 ```cmd
 pip install django
 ```
 
-3. Run development server:
+3. 開発サーバーを起動:
 
 ```cmd
 py manage.py runserver
 ```
 
-4. Open:
+4. ブラウザで開く:
 
 - http://127.0.0.1:8000/
 
 ## Documentation
 
-- Project direction and architecture: docs/PROJECT_GUIDE.md
-- Development workflow and branch policy: docs/WORKFLOW.md
-- Product roadmap (existing): docs/ROADMAP.md
-- Milestone and issue operations: docs/ISSUE_WORKFLOW.md
-- Milestone plan and issue seeds: docs/MILESTONE_PLAN.md, docs/ISSUE_SEEDS.md
-- Working execution docs (new): docs/roadmap.md, docs/milestones.md, docs/status.md
+- 全体方針とアーキテクチャ: docs/PROJECT_GUIDE.md
+- 開発フローとブランチ運用: docs/WORKFLOW.md
+- プロダクトロードマップ（既存）: docs/ROADMAP.md
+- Milestone / Issue 運用: docs/ISSUE_WORKFLOW.md
+- Milestone 計画と Issue 下書き: docs/MILESTONE_PLAN.md, docs/ISSUE_SEEDS.md
+- 実行管理ドキュメント（今回追加）: docs/roadmap.md, docs/milestones.md, docs/status.md
