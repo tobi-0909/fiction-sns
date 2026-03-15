@@ -36,6 +36,15 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = []
 
+_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+_trusted_origins = [o.strip() for o in _trusted_origins_env.split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = _trusted_origins or [
+    'http://localhost:8000',
+    'https://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://127.0.0.1:8000',
+]
+
 
 # Application definition
 
