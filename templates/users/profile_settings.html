@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}プロフィール設定 | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero auth-card">
+  <h2>プロフィール設定</h2>
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">更新する</button>
+  </form>
+  <p class="helptext">handle は常に @ なしで保存され、表示時に @ が付きます。</p>
+</section>
+{% endblock %}
