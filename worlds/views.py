@@ -1,8 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import WorldForm
-from .models import World
+from .forms import CharacterForm, WorldForm
+from .models import Character, World
 
 
 @login_required
@@ -50,3 +50,59 @@ def world_delete(request, world_id):
 		return redirect('world_list')
 
 	return render(request, 'worlds/world_confirm_delete.html', {'world': world})
+
+
+@login_required
+def character_list(request, world_id):
+	world = get_object_or_404(World, id=world_id, owner=request.user)
+	characters = Character.objects.filter(world=world)
+	return render(request, 'worlds/character_list.html', {'world': world, 'characters': characters})
+
+
+@login_required
+def character_create(request, world_id):
+	world = get_object_or_404(World, id=world_id, owner=request.user)
+
+	if request.method == 'POST':
+		form = CharacterForm(request.POST)
+		if form.is_valid():
+			character = form.save(commit=False)
+			character.world = world
+			character.save()
+			return redirect('character_list', world_id=world.id)
+	else:
+		form = CharacterForm()
+
+	return render(request, 'worlds/character_form.html', {'form': form, 'mode': 'create', 'world': world})
+
+
+@login_required
+def character_edit(request, world_id, character_id):
+	world = get_object_or_404(World, id=world_id, owner=request.user)
+	character = get_object_or_404(Character, id=character_id, world=world)
+
+	if request.method == 'POST':
+		form = CharacterForm(request.POST, instance=character)
+		if form.is_valid():
+			form.save()
+			return redirect('character_list', world_id=world.id)
+	else:
+		form = CharacterForm(instance=character)
+
+	return render(
+		request,
+		'worlds/character_form.html',
+		{'form': form, 'mode': 'edit', 'world': world, 'character': character},
+	)
+
+
+@login_required
+def character_delete(request, world_id, character_id):
+	world = get_object_or_404(World, id=world_id, owner=request.user)
+	character = get_object_or_404(Character, id=character_id, world=world)
+
+	if request.method == 'POST':
+		character.delete()
+		return redirect('character_list', world_id=world.id)
+
+	return render(request, 'worlds/character_confirm_delete.html', {'world': world, 'character': character})
