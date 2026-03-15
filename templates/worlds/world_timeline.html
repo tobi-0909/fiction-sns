@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ world.title }} タイムライン | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero world-hero">
+  <div class="world-hero-header">
+    <h2>{{ world.title }} タイムライン</h2>
+  </div>
+
+  <p>{{ world.description|default:"このWorldの説明は未設定です。" }}</p>
+
+  {% if posts %}
+    <ul class="timeline-list">
+      {% for post in posts %}
+        <li class="timeline-item">
+          <div class="timeline-meta">
+            <strong>{{ post.character.name }}</strong>
+            <span>@{{ post.author.handle|default:post.author.username }}</span>
+            <small>{{ post.created_at|date:"Y-m-d H:i" }}</small>
+          </div>
+          <p>{{ post.text|linebreaksbr }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>まだ投稿がありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

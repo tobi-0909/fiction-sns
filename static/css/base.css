@@ -197,6 +197,35 @@ body {
   color: #9b1d20 !important;
 }
 
+.timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.timeline-item {
+  background: #fdfaf4;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: baseline;
+  margin-bottom: 0.45rem;
+  color: #4f5952;
+}
+
+.timeline-item p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .site-footer {
   padding: 1.25rem 0 2rem;
   color: #5f685f;
