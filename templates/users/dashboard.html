@@ -5,7 +5,8 @@
 {% block content %}
 <section class="hero">
   <h2>ダッシュボード</h2>
-  <p>{{ user.username }} さん、ログイン中です。</p>
+  <p>{{ user.display_name|default:user.handle }} さん、ログイン中です。</p>
+  <p>あなたのハンドル: <strong>@{{ user.handle|default:user.username }}</strong></p>
   <p>このページはログイン必須です。</p>
 </section>
 {% endblock %}

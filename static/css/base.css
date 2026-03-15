@@ -61,6 +61,10 @@ body {
 .auth-handle {
   color: #3f4b44;
   font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f2ede2;
 }
 
 .logout-form {
@@ -94,6 +98,10 @@ body {
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
   font-size: 1rem;
+}
+
+.auth-form input[name='handle'] {
+  text-transform: lowercase;
 }
 
 .helptext {
