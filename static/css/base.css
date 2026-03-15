@@ -58,6 +58,11 @@ body {
   font-weight: 600;
 }
 
+.auth-handle {
+  color: #3f4b44;
+  font-weight: 700;
+}
+
 .logout-form {
   margin: 0;
 }
