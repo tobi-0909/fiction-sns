@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}World一覧 | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero world-hero">
+  <div class="world-hero-header">
+    <h2>あなたのWorld一覧</h2>
+    <a class="action-link" href="{% url 'world_create' %}">+ 新規作成</a>
+  </div>
+
+  {% if worlds %}
+    <ul class="world-list">
+      {% for world in worlds %}
+        <li class="world-item">
+          <div>
+            <h3>{{ world.title }}</h3>
+            <p>{{ world.description|default:"説明は未設定です。"|linebreaksbr }}</p>
+            <small>作成日: {{ world.created_at|date:"Y-m-d H:i" }}</small>
+          </div>
+          <div class="world-actions">
+            <a href="{% url 'world_edit' world.id %}">編集</a>
+            <a class="danger-link" href="{% url 'world_delete' world.id %}">削除</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>まだWorldがありません。最初のWorldを作成しましょう。</p>
+  {% endif %}
+</section>
+{% endblock %}

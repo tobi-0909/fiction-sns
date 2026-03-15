@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}World削除確認 | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero auth-card">
+  <h2>Worldを削除しますか？</h2>
+  <p>対象: <strong>{{ world.title }}</strong></p>
+  <p>この操作は取り消せません。</p>
+
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    <button type="submit">削除する</button>
+  </form>
+
+  <p><a href="{% url 'world_list' %}">キャンセルして戻る</a></p>
+</section>
+{% endblock %}
