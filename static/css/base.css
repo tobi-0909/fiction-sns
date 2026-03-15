@@ -1,0 +1,84 @@
+:root {
+  --bg: #f4f1ea;
+  --paper: #fffdfa;
+  --ink: #1f2521;
+  --accent: #2a6f5a;
+  --line: #d9d2c3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, #f3eee3 0%, #ece7de 100%);
+}
+
+.container {
+  width: min(960px, 92vw);
+  margin: 0 auto;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  padding: 1rem 0;
+}
+
+.brand {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.brand a {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.tagline {
+  margin: 0.35rem 0 0;
+  color: #4e5a53;
+  font-size: 0.95rem;
+}
+
+.content {
+  padding: 1.5rem 0;
+}
+
+.hero {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.hero h2 {
+  margin-top: 0;
+}
+
+.notice {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.site-footer {
+  padding: 1.25rem 0 2rem;
+  color: #5f685f;
+}
+
+@media (max-width: 600px) {
+  .brand {
+    font-size: 1.05rem;
+  }
+
+  .tagline {
+    font-size: 0.88rem;
+  }
+
+  .hero {
+    padding: 1rem;
+  }
+}

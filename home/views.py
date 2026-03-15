@@ -1,5 +1,5 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 
 
 def index(request):
-    return HttpResponse("Fictions flow SNS（仮）")
+    return render(request, "home/index.html")
