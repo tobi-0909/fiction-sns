@@ -44,6 +44,64 @@ body {
   font-size: 0.95rem;
 }
 
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+}
+
+.nav-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.logout-form {
+  margin: 0;
+}
+
+.logout-form button,
+.auth-form button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-card {
+  max-width: 560px;
+}
+
+.auth-form p {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
+.auth-form input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font-size: 1rem;
+}
+
+.helptext {
+  font-size: 0.84rem;
+  color: #5f685f;
+}
+
+.errorlist {
+  color: #9b1d20;
+  margin: 0;
+  padding-left: 1rem;
+}
+
 .content {
   padding: 1.5rem 0;
 }
@@ -76,6 +134,11 @@ body {
 
   .tagline {
     font-size: 0.88rem;
+  }
+
+  .nav-links {
+    gap: 0.65rem;
+    margin-top: 0.75rem;
   }
 
   .hero {

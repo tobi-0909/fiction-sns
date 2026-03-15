@@ -12,6 +12,19 @@
     <div class="container">
       <h1 class="brand"><a href="/">Fictions Flow SNS</a></h1>
       <p class="tagline">物語世界とキャラクターを育てるSNS</p>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="/">ホーム</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard' %}">ダッシュボード</a>
+          <form method="post" action="{% url 'logout' %}" class="logout-form">
+            {% csrf_token %}
+            <button type="submit">ログアウト</button>
+          </form>
+        {% else %}
+          <a href="{% url 'signup' %}">新規登録</a>
+          <a href="{% url 'login' %}">ログイン</a>
+        {% endif %}
+      </nav>
     </div>
   </header>
 
