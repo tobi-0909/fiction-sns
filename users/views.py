@@ -1,7 +1,13 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect, render
 
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, EmailOrHandleAuthenticationForm
+
+
+class CustomLoginView(LoginView):
+	template_name = 'registration/login.html'
+	authentication_form = EmailOrHandleAuthenticationForm
 
 
 def signup(request):
