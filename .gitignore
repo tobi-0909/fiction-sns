@@ -11,6 +11,9 @@ env/
 # Django local files
 db.sqlite3
 
+# 環境変数ファイル（秘密情報を含むため非公開）
+.env
+
 # Tooling
 .vscode/
 .idea/
