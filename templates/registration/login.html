@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}ログイン | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero auth-card">
+  <h2>ログイン</h2>
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">ログイン</button>
+  </form>
+  <p>アカウントがない場合は <a href="{% url 'signup' %}">新規登録</a> へ。</p>
+</section>
+{% endblock %}
