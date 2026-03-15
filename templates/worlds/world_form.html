@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if mode == "create" %}World作成{% else %}World編集{% endif %} | Fictions Flow SNS
+{% endblock %}
+
+{% block content %}
+<section class="hero auth-card">
+  {% if mode == "create" %}
+    <h2>Worldを作成</h2>
+  {% else %}
+    <h2>Worldを編集</h2>
+  {% endif %}
+
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">保存する</button>
+  </form>
+
+  <p><a href="{% url 'world_list' %}">一覧へ戻る</a></p>
+</section>
+{% endblock %}
