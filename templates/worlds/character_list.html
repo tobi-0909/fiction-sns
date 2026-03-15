@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Character一覧 | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero world-hero">
+  <div class="world-hero-header">
+    <h2>{{ world.title }} のCharacter一覧</h2>
+    <a class="action-link" href="{% url 'character_create' world.id %}">+ 新規作成</a>
+  </div>
+
+  <p><a href="{% url 'world_list' %}">← World一覧へ戻る</a></p>
+
+  {% if characters %}
+    <ul class="world-list">
+      {% for character in characters %}
+        <li class="world-item">
+          <div>
+            <h3>{{ character.name }}</h3>
+            <p><strong>プロフィール:</strong><br>{{ character.profile|default:"未設定"|linebreaksbr }}</p>
+            <p><strong>性格・口調メモ:</strong><br>{{ character.personality|default:"未設定"|linebreaksbr }}</p>
+            <small>作成日: {{ character.created_at|date:"Y-m-d H:i" }}</small>
+          </div>
+          <div class="world-actions">
+            <a href="{% url 'character_edit' world.id character.id %}">編集</a>
+            <a class="danger-link" href="{% url 'character_delete' world.id character.id %}">削除</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>まだCharacterがありません。新規作成しましょう。</p>
+  {% endif %}
+</section>
+{% endblock %}

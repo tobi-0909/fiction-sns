@@ -19,6 +19,7 @@
             <small>作成日: {{ world.created_at|date:"Y-m-d H:i" }}</small>
           </div>
           <div class="world-actions">
+            <a href="{% url 'character_list' world.id %}">Character管理</a>
             <a href="{% url 'world_edit' world.id %}">編集</a>
             <a class="danger-link" href="{% url 'world_delete' world.id %}">削除</a>
           </div>
