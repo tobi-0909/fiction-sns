@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CharacterForm, WorldForm
-from .models import Character, World
+from .models import Character, Post, World
 
 
 @login_required
@@ -24,6 +24,13 @@ def world_create(request):
 		form = WorldForm()
 
 	return render(request, 'worlds/world_form.html', {'form': form, 'mode': 'create'})
+
+
+@login_required
+def world_timeline(request, world_id):
+	world = get_object_or_404(World, id=world_id)
+	posts = Post.objects.filter(world=world).select_related('character', 'author')
+	return render(request, 'worlds/world_timeline.html', {'world': world, 'posts': posts})
 
 
 @login_required
