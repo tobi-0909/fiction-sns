@@ -7,6 +7,9 @@
   <h2>ダッシュボード</h2>
   <p>{{ user.display_name|default:user.handle }} さん、ログイン中です。</p>
   <p>あなたのハンドル: <strong>@{{ user.handle|default:user.username }}</strong></p>
+  <p><a class="action-link" href="{% url 'public_profile' handle=user.handle|default:user.username %}">公開プロフィールを見る</a></p>
+  <p><a class="action-link" href="{% url 'profile_settings' %}">プロフィールを編集する</a></p>
+  <p><a class="action-link" href="{% url 'follow_request_list' %}">フォローリクエストを見る</a></p>
   <p>このページはログイン必須です。</p>
 </section>
 {% endblock %}

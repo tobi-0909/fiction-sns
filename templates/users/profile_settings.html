@@ -10,6 +10,8 @@
     {{ form.as_p }}
     <button type="submit">更新する</button>
   </form>
+  <p><a class="action-link" href="{% url 'public_profile' handle=user.handle|default:user.username %}">公開プロフィールを見る</a></p>
+  <p><a class="action-link" href="{% url 'follow_request_list' %}">フォローリクエストを見る</a></p>
   <p class="helptext">handle は常に @ なしで保存され、表示時に @ が付きます。</p>
 </section>
 {% endblock %}

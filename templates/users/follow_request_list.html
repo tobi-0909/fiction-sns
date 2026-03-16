@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}フォローリクエスト | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero profile-card">
+  <div class="world-hero-header">
+    <h2>フォローリクエスト</h2>
+    <a class="action-link" href="{% url 'public_profile' handle=user.handle|default:user.username %}">プロフィールへ戻る</a>
+  </div>
+
+  {% if pending_requests %}
+    <ul class="world-list">
+      {% for follow in pending_requests %}
+        <li class="world-item">
+          <div>
+            <h3>{{ follow.follower.display_name|default:follow.follower.handle }}</h3>
+            <p><a href="{% url 'public_profile' handle=follow.follower.handle|default:follow.follower.username %}">@{{ follow.follower.handle|default:follow.follower.username }}</a></p>
+            <small>リクエスト日時: {{ follow.requested_at|date:"Y-m-d H:i" }}</small>
+          </div>
+          <div class="world-actions">
+            <form method="post" action="{% url 'follow_accept' follow.follower.handle %}" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="action-button">承認</button>
+            </form>
+            <form method="post" action="{% url 'follow_reject' follow.follower.handle %}" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="secondary-button">拒否</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>現在、未承認のフォローリクエストはありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

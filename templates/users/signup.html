@@ -6,11 +6,17 @@
 <section class="hero auth-card">
   <h2>新規登録</h2>
   <p class="helptext">ハンドル名が未入力の場合は、自動でランダムなハンドル名が割り当てられます。</p>
+  {% if next_url %}
+    <p class="notice">登録後はログインして、元の画面に戻れます。</p>
+  {% endif %}
   <form method="post" class="auth-form">
     {% csrf_token %}
+    {% if next_url %}
+      <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
     {{ form.as_p }}
     <button type="submit">登録する</button>
   </form>
-  <p>すでにアカウントがある場合は <a href="{% url 'login' %}">ログイン</a> へ。</p>
+  <p>すでにアカウントがある場合は <a href="{{ login_url }}">ログイン</a> へ。</p>
 </section>
 {% endblock %}

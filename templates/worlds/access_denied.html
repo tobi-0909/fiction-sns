@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}アクセス拒否 | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero world-hero">
+  <div class="world-hero-header">
+    <h2>アクセスできません</h2>
+  </div>
+  <p>{{ message|default:"このページにアクセスする権限がありません。" }}</p>
+  <p><a href="{% url 'world_list' %}">World一覧へ戻る</a></p>
+</section>
+{% endblock %}
