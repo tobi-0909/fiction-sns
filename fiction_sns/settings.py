@@ -34,7 +34,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-dev-only')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+# 本番環境では ALLOWED_HOSTS を明示的に設定する必要がある
+# 例：ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h.strip() for h in _hosts_env.split(',') if h.strip()] if _hosts_env else ['localhost', '127.0.0.1']
 
 _trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 _trusted_origins = [o.strip() for o in _trusted_origins_env.split(',') if o.strip()]
@@ -140,6 +143,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
