@@ -118,6 +118,10 @@ class Post(models.Model):
 
 	class Meta:
 		ordering = ['-created_at']
+		indexes = [
+			models.Index(fields=['world', '-created_at', '-id'], name='idx_post_world_timeline'),
+			models.Index(fields=['author', '-created_at'], name='idx_post_author_recent'),
+		]
 
 	def clean(self):
 		super().clean()

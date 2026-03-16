@@ -53,6 +53,10 @@ class Follow(models.Model):
             ),
         ]
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['follower', 'status', '-accepted_at', '-created_at'], name='idx_following_list'),
+            models.Index(fields=['followee', 'status', '-accepted_at', '-created_at'], name='idx_follower_list'),
+        ]
 
     def clean(self):
         super().clean()
