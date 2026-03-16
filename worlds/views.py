@@ -3,9 +3,12 @@ from urllib.parse import urlencode, urlsplit
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from .forms import CharacterForm, ModerationActionForm, PostForm, WorldForm
 from .models import Character, CharacterWorldEntry, Post, World, WorldMembership, WorldModerationLog
@@ -13,6 +16,8 @@ from .permissions import can_post_world, can_view_world
 
 
 logger = logging.getLogger(__name__)
+
+TIMELINE_PAGE_SIZE = 20
 
 # deny_reason classification table for issue #52.
 DENY_REASON_PRIVATE_WORLD_NOT_MEMBER = 'PRIVATE_WORLD_NOT_MEMBER'
@@ -81,6 +86,32 @@ def _deny_world_access(request, deny_reason):
 	return render(request, 'worlds/access_denied.html', {'message': message}, status=403)
 
 
+def _encode_timeline_cursor(post):
+	return f"{post.created_at.isoformat()}|{post.id}"
+
+
+def _decode_timeline_cursor(raw_cursor):
+	if not raw_cursor:
+		return None
+	parts = raw_cursor.split('|', 1)
+	if len(parts) != 2:
+		return None
+
+	raw_datetime, raw_id = parts
+	datetime_value = parse_datetime(raw_datetime)
+	if datetime_value is None:
+		return None
+	if timezone.is_naive(datetime_value):
+		datetime_value = timezone.make_aware(datetime_value, timezone.get_current_timezone())
+
+	try:
+		post_id = int(raw_id)
+	except ValueError:
+		return None
+
+	return datetime_value, post_id
+
+
 @login_required
 def world_list(request):
 	worlds = World.objects.filter(owner=request.user)
@@ -108,7 +139,30 @@ def world_timeline(request, world_id):
 		if world.visibility == World.Visibility.PRIVATE:
 			return _deny_world_access(request, DENY_REASON_PRIVATE_WORLD_NOT_MEMBER)
 		return _deny_world_access(request, DENY_REASON_WORLD_VIEW_FORBIDDEN)
-	posts = Post.objects.filter(world=world).select_related('character', 'author')
+
+	base_posts = (
+		Post.objects.filter(world=world)
+		.select_related('character', 'author')
+		.order_by('-created_at', '-id')
+	)
+	current_cursor = request.GET.get('cursor', '').strip()
+	decoded_cursor = _decode_timeline_cursor(current_cursor)
+	if current_cursor and decoded_cursor is None:
+		messages.warning(request, 'タイムラインのカーソルが不正です。先頭から再表示します。')
+	if decoded_cursor is not None:
+		cursor_datetime, cursor_id = decoded_cursor
+		base_posts = base_posts.filter(
+			Q(created_at__lt=cursor_datetime)
+			| (Q(created_at=cursor_datetime) & Q(id__lt=cursor_id))
+		)
+
+	chunk = list(base_posts[: TIMELINE_PAGE_SIZE + 1])
+	has_next = len(chunk) > TIMELINE_PAGE_SIZE
+	posts = chunk[:TIMELINE_PAGE_SIZE]
+	next_cursor = ''
+	if has_next and posts:
+		next_cursor = _encode_timeline_cursor(posts[-1])
+
 	post_create_url = reverse('post_create', args=[world.id])
 	return render(
 		request,
@@ -116,6 +170,8 @@ def world_timeline(request, world_id):
 		{
 			'world': world,
 			'posts': posts,
+			'has_next': has_next,
+			'next_cursor': next_cursor,
 			'can_post': can_post_world(request.user, world),
 			'login_to_post_url': _build_auth_url('login', post_create_url),
 			'signup_to_post_url': _build_auth_url('signup', post_create_url),

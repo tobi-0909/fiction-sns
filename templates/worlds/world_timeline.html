@@ -33,6 +33,11 @@
         </li>
       {% endfor %}
     </ul>
+    {% if has_next and next_cursor %}
+      <p>
+        <a class="action-link" href="?cursor={{ next_cursor|urlencode }}">次の投稿を読み込む</a>
+      </p>
+    {% endif %}
   {% else %}
     <p>まだ投稿がありません。</p>
   {% endif %}

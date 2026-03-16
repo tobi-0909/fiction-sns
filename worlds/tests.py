@@ -68,6 +68,93 @@ class WorldPermissionTests(TestCase):
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, 200)
 
+	def test_world_timeline_uses_stable_desc_order_with_id_tiebreak(self):
+		self.client.force_login(self.owner)
+		tied_time = Post.objects.create(
+			world=self.public_world,
+			character=self.character,
+			author=self.owner,
+			text='anchor',
+		).created_at
+		newer_same_time = Post.objects.create(
+			world=self.public_world,
+			character=self.character,
+			author=self.owner,
+			text='newer same ts',
+		)
+		older_same_time = Post.objects.create(
+			world=self.public_world,
+			character=self.character,
+			author=self.owner,
+			text='older same ts',
+		)
+		newer_same_time.created_at = tied_time
+		older_same_time.created_at = tied_time
+		newer_same_time.save(update_fields=['created_at'])
+		older_same_time.save(update_fields=['created_at'])
+
+		response = self.client.get(reverse('world_timeline', args=[self.public_world.id]))
+		self.assertEqual(response.status_code, 200)
+		posts = list(response.context['posts'])
+		ids = [post.id for post in posts]
+		self.assertEqual(ids, sorted(ids, reverse=True))
+
+	def test_world_timeline_exposes_cursor_link_for_next_page(self):
+		self.client.force_login(self.owner)
+		for index in range(25):
+			Post.objects.create(
+				world=self.public_world,
+				character=self.character,
+				author=self.owner,
+				text=f'post {index}',
+			)
+
+		response = self.client.get(reverse('world_timeline', args=[self.public_world.id]))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, '次の投稿を読み込む')
+		self.assertEqual(len(response.context['posts']), 20)
+		self.assertTrue(response.context['has_next'])
+		self.assertTrue(response.context['next_cursor'])
+
+	def test_world_timeline_cursor_pagination_has_no_duplicates(self):
+		self.client.force_login(self.owner)
+		for index in range(25):
+			Post.objects.create(
+				world=self.public_world,
+				character=self.character,
+				author=self.owner,
+				text=f'post {index}',
+			)
+
+		first_page = self.client.get(reverse('world_timeline', args=[self.public_world.id]))
+		cursor = first_page.context['next_cursor']
+		second_page = self.client.get(
+			reverse('world_timeline', args=[self.public_world.id]),
+			{'cursor': cursor},
+		)
+
+		first_ids = {post.id for post in first_page.context['posts']}
+		second_ids = {post.id for post in second_page.context['posts']}
+		self.assertFalse(first_ids.intersection(second_ids))
+
+	def test_world_timeline_invalid_cursor_falls_back_to_first_page(self):
+		self.client.force_login(self.owner)
+		for index in range(3):
+			Post.objects.create(
+				world=self.public_world,
+				character=self.character,
+				author=self.owner,
+				text=f'post {index}',
+			)
+
+		response = self.client.get(
+			reverse('world_timeline', args=[self.public_world.id]),
+			{'cursor': 'broken-cursor'},
+			follow=True,
+		)
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'タイムラインのカーソルが不正です。先頭から再表示します。')
+
 	def test_world_timeline_allows_anonymous_user_for_public_world(self):
 		url = reverse('world_timeline', args=[self.public_world.id])
 		response = self.client.get(url)
