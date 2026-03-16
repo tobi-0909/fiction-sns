@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | @{{ profile_user.handle|default:profile_user.username }}{% endblock %}
+
+{% block content %}
+<section class="hero profile-card">
+  <div class="world-hero-header">
+    <h2>@{{ profile_user.handle|default:profile_user.username }} の{{ title }}</h2>
+    <a class="action-link" href="{% url 'public_profile' handle=profile_user.handle|default:profile_user.username %}">プロフィールへ戻る</a>
+  </div>
+
+  {% if page_obj.object_list %}
+    <ul class="world-list">
+      {% for edge in page_obj.object_list %}
+        {% if list_type == 'following' %}
+          {% with target_user=edge.followee %}
+            <li class="world-item">
+              <div>
+                <h3>{{ target_user.display_name|default:target_user.handle }}</h3>
+                <p><a href="{% url 'public_profile' handle=target_user.handle|default:target_user.username %}">@{{ target_user.handle|default:target_user.username }}</a></p>
+                <small>フォロー開始: {{ edge.accepted_at|default:edge.created_at|date:"Y-m-d H:i" }}</small>
+              </div>
+            </li>
+          {% endwith %}
+        {% else %}
+          {% with target_user=edge.follower %}
+            <li class="world-item">
+              <div>
+                <h3>{{ target_user.display_name|default:target_user.handle }}</h3>
+                <p><a href="{% url 'public_profile' handle=target_user.handle|default:target_user.username %}">@{{ target_user.handle|default:target_user.username }}</a></p>
+                <small>フォロー開始: {{ edge.accepted_at|default:edge.created_at|date:"Y-m-d H:i" }}</small>
+              </div>
+            </li>
+          {% endwith %}
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{{ empty_message }}</p>
+  {% endif %}
+
+  {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination-nav" aria-label="ページネーション">
+      {% if page_obj.has_previous %}
+        <a class="action-link" href="?page={{ page_obj.previous_page_number }}">前へ</a>
+      {% endif %}
+      <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a class="action-link" href="?page={{ page_obj.next_page_number }}">次へ</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+</section>
+{% endblock %}

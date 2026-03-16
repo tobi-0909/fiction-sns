@@ -384,6 +384,22 @@ body {
   font-weight: 600;
 }
 
+.count-link {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fdfaf4;
+  padding: 0.35rem 0.65rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+}
+
+.count-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .profile-header {
   margin-bottom: 0.8rem;
 }
@@ -441,6 +457,14 @@ body {
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: baseline;
+}
+
+.pagination-nav {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .site-footer {

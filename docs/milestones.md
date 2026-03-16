@@ -1,63 +1,63 @@
-# Milestones (Execution Plan)
+# マイルストーン（実行計画）
 
-This document converts roadmap goals into implementable checkpoints.
+この文書は、ロードマップ上の目標を実装可能なチェックポイントに落とし込むためのものです。
 
-## Milestone 1 (Week 1-2)
-Scope:
-- Local Django project running
-- Simple top page available from browser
-- Repository initialized and pushed
+## マイルストーン1（1〜2週）
+スコープ:
+- ローカルで Django プロジェクトが起動できる
+- ブラウザでシンプルなトップページを表示できる
+- リポジトリの初期化と push が完了している
 
-Acceptance Criteria:
-- `python manage.py runserver` starts without errors
-- `GET /` returns custom page
-- `git status` clean after initial commit
+受け入れ条件:
+- python manage.py runserver がエラーなく起動する
+- GET / でカスタムページが返る
+- 初回コミット後に git status が clean である
 
-## Milestone 2 (Week 2-4)
-Scope:
-- Django auth for sign-up/login/logout
-- World CRUD
-- Character CRUD (linked to World)
-- Basic mobile layout improvements
+## マイルストーン2（2〜4週）
+スコープ:
+- Django 認証（新規登録 / ログイン / ログアウト）
+- World の CRUD
+- Character の CRUD（World 紐付け）
+- モバイル向けの基本レイアウト改善
 
-Data Model Draft:
-- World: `title`, `description`, `created_at`, `owner`
-- Character: `world`, `name`, `profile`, `personality`, `created_at`
+データモデル案:
+- World: title, description, created_at, owner
+- Character: world, name, profile, personality, created_at
 
-Acceptance Criteria:
-- Auth flow works end-to-end
-- Logged-in user can create/edit own World and Character
-- Forms are usable on narrow screens
+受け入れ条件:
+- 認証フローが end-to-end で動作する
+- ログインユーザーが自分の World / Character を作成・編集できる
+- フォームが狭い画面幅でも利用可能である
 
-## Milestone 3 (Week 3-6)
-Scope:
-- Post model
-- Character-based posting UI
-- World timeline page sorted by newest first
+## マイルストーン3（3〜6週）
+スコープ:
+- Post モデル
+- Character 選択で投稿する UI
+- World タイムラインを新着順で表示
 
-Data Model Draft:
-- Post: `world`, `character`, `text`, `created_at`, `author`
+データモデル案:
+- Post: world, character, text, created_at, author
 
-Acceptance Criteria:
-- User can create post with selected Character
-- Timeline shows posts in descending `created_at`
-- Mobile timeline is readable in one-column layout
+受け入れ条件:
+- ユーザーが Character を選択して投稿できる
+- タイムラインが created_at 降順で表示される
+- モバイルのタイムラインが1カラムで読みやすい
 
-## Milestone 4 (Week 2-3 after M3)
-Scope:
-- Deploy to managed hosting
-- Confirm smartphone access from external network
+## マイルストーン4（M3完了後 2〜3週）
+スコープ:
+- マネージドホスティングへのデプロイ
+- 外部ネットワークからスマートフォンでアクセス確認
 
-Acceptance Criteria:
-- Public URL available
-- Full user flow works on phone browser
+受け入れ条件:
+- 公開 URL が利用可能である
+- スマホブラウザで主要ユーザーフローが一通り動作する
 
-## Optional Milestone 5-6 (Later)
-- AI post generation
-- AI summary of timeline range
-- Read progress or follow-state persistence
+## 任意マイルストーン5〜6（後続）
+- AI による投稿生成
+- タイムライン範囲要約
+- 読了位置またはフォロー状態の永続化
 
-## Risk Notes
-- Scope creep between milestones
-- Starting AI too early before schema stabilizes
-- Missing ownership checks in CRUD endpoints
+## リスクメモ
+- マイルストーン間のスコープ膨張
+- スキーマ安定前に AI 実装へ着手してしまうリスク
+- CRUD エンドポイントの所有者チェック漏れ

@@ -193,6 +193,56 @@ class PublicProfileTests(TestCase):
 		self.assertRedirects(response, reverse('public_profile', args=['alice']))
 		self.assertFalse(Follow.objects.filter(follower=self.viewer, followee=self.user).exists())
 
+	def test_public_profile_has_links_to_follow_lists(self):
+		self.client.force_login(self.viewer)
+		response = self.client.get(reverse('public_profile', args=['alice']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, reverse('following_list', args=['alice']))
+		self.assertContains(response, reverse('follower_list', args=['alice']))
+
+	def test_following_list_shows_followed_users(self):
+		Follow.objects.create(follower=self.user, followee=self.viewer, status=Follow.Status.ACCEPTED)
+		self.client.force_login(self.user)
+		response = self.client.get(reverse('following_list', args=['alice']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, '@bob')
+		self.assertContains(response, reverse('public_profile', args=['bob']))
+
+	def test_follower_list_shows_followers(self):
+		Follow.objects.create(follower=self.viewer, followee=self.user, status=Follow.Status.ACCEPTED)
+		self.client.force_login(self.user)
+		response = self.client.get(reverse('follower_list', args=['alice']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, '@bob')
+		self.assertContains(response, reverse('public_profile', args=['bob']))
+
+	def test_following_list_shows_empty_state(self):
+		self.client.force_login(self.user)
+		response = self.client.get(reverse('following_list', args=['alice']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'まだ誰もフォローしていません。')
+
+	def test_following_list_has_pagination(self):
+		for index in range(21):
+			target_user = User.objects.create_user(
+				username=f'follow_target_{index}',
+				email=f'follow_target_{index}@example.com',
+				password='pass12345',
+				handle=f'follow_target_{index}',
+			)
+			Follow.objects.create(
+				follower=self.user,
+				followee=target_user,
+				status=Follow.Status.ACCEPTED,
+			)
+
+		self.client.force_login(self.user)
+		first_page = self.client.get(reverse('following_list', args=['alice']))
+		second_page = self.client.get(reverse('following_list', args=['alice']), {'page': 2})
+
+		self.assertContains(first_page, '?page=2')
+		self.assertContains(second_page, '?page=1')
+
 
 class FollowModelTests(TestCase):
 	def setUp(self):
