@@ -21,7 +21,7 @@
   <p>{{ world.description|default:"このWorldの説明は未設定です。" }}</p>
 
   {% if posts %}
-    <ul class="timeline-list">
+    <ul class="timeline-list" data-timeline-list>
       {% for post in posts %}
         <li class="timeline-item">
           <div class="timeline-meta">
@@ -33,15 +33,143 @@
         </li>
       {% endfor %}
     </ul>
-    {% if has_next and next_cursor %}
-      <p>
-        <a class="action-link" href="?cursor={{ next_cursor|urlencode }}">次の投稿を読み込む</a>
-      </p>
-    {% endif %}
+    <div class="timeline-controls" data-load-more-region>
+      {% if has_next and next_cursor %}
+        <button
+          type="button"
+          class="action-button"
+          data-load-more
+          data-load-more-url="?cursor={{ next_cursor|urlencode }}"
+        >
+          次の投稿を読み込む
+        </button>
+        <noscript>
+          <p>
+            <a class="action-link" href="?cursor={{ next_cursor|urlencode }}">次の投稿を読み込む</a>
+          </p>
+        </noscript>
+      {% else %}
+        <p class="timeline-end-message" data-end-message>ここまでが最新です。</p>
+      {% endif %}
+      <p class="timeline-feedback" data-timeline-feedback aria-live="polite" role="status"></p>
+      <div class="timeline-retry" data-timeline-retry hidden>
+        <p>読み込みに失敗しました。通信が安定したら再試行してください。</p>
+        <button type="button" class="secondary-button" data-retry-load>再試行する</button>
+      </div>
+    </div>
   {% else %}
-    <p>まだ投稿がありません。</p>
+    <div class="timeline-empty-state">
+      <p>まだ投稿がありません。</p>
+      <p>通信状況によって表示が遅い場合があります。</p>
+      <a class="action-link" href="{{ request.path }}">タイムラインを再読み込みする</a>
+    </div>
   {% endif %}
 </section>
+
+<script>
+  (function () {
+    const list = document.querySelector('[data-timeline-list]');
+    const loadMoreButton = document.querySelector('[data-load-more]');
+    const feedback = document.querySelector('[data-timeline-feedback]');
+    const retryPanel = document.querySelector('[data-timeline-retry]');
+    const retryButton = document.querySelector('[data-retry-load]');
+    const controls = document.querySelector('[data-load-more-region]');
+
+    if (!list || !loadMoreButton || !feedback || !controls || typeof window.fetch !== 'function') {
+      return;
+    }
+
+    let nextUrl = loadMoreButton.getAttribute('data-load-more-url');
+    if (!nextUrl) {
+      return;
+    }
+
+    const idleLabel = '次の投稿を読み込む';
+    const loadingLabel = '読み込み中...';
+
+    function setLoading(isLoading) {
+      loadMoreButton.disabled = isLoading;
+      loadMoreButton.textContent = isLoading ? loadingLabel : idleLabel;
+    }
+
+    function setFeedback(message, isError) {
+      feedback.textContent = message || '';
+      feedback.classList.toggle('is-error', Boolean(isError));
+    }
+
+    function toggleRetry(show) {
+      if (retryPanel) {
+        retryPanel.hidden = !show;
+      }
+    }
+
+    function updateNextButtonFromDocument(doc) {
+      const nextButton = doc.querySelector('[data-load-more]');
+      if (nextButton) {
+        nextUrl = nextButton.getAttribute('data-load-more-url') || '';
+      } else {
+        nextUrl = '';
+      }
+
+      if (!nextUrl) {
+        loadMoreButton.hidden = true;
+        const endMessage = document.createElement('p');
+        endMessage.className = 'timeline-end-message';
+        endMessage.textContent = 'ここまでが最新です。';
+        controls.appendChild(endMessage);
+      }
+    }
+
+    async function loadNextPage() {
+      if (!nextUrl) {
+        return;
+      }
+
+      setLoading(true);
+      setFeedback('読み込み中です。', false);
+      toggleRetry(false);
+
+      try {
+        const response = await fetch(nextUrl, {
+          headers: {
+            'X-Requested-With': 'TimelineFetch',
+          },
+        });
+        if (!response.ok) {
+          throw new Error('fetch-failed');
+        }
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const nextItems = doc.querySelectorAll('[data-timeline-list] .timeline-item');
+
+        if (!nextItems.length) {
+          setFeedback('これ以上の投稿はありません。', false);
+          updateNextButtonFromDocument(doc);
+          return;
+        }
+
+        nextItems.forEach(function (item) {
+          list.appendChild(item.cloneNode(true));
+        });
+
+        updateNextButtonFromDocument(doc);
+        setFeedback('続きを読み込みました。', false);
+      } catch (error) {
+        setFeedback('読み込みに失敗しました。', true);
+        toggleRetry(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMoreButton.addEventListener('click', loadNextPage);
+    if (retryButton) {
+      retryButton.addEventListener('click', loadNextPage);
+    }
+  })();
+</script>
 
 {% if not request.user.is_authenticated %}
   <dialog class="login-required-dialog" data-login-dialog>

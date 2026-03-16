@@ -112,9 +112,18 @@ class WorldPermissionTests(TestCase):
 		response = self.client.get(reverse('world_timeline', args=[self.public_world.id]))
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, '次の投稿を読み込む')
+		self.assertContains(response, '再試行する')
+		self.assertContains(response, 'data-load-more-url')
 		self.assertEqual(len(response.context['posts']), 20)
 		self.assertTrue(response.context['has_next'])
 		self.assertTrue(response.context['next_cursor'])
+
+	def test_world_timeline_empty_state_has_reload_action(self):
+		self.client.force_login(self.owner)
+		response = self.client.get(reverse('world_timeline', args=[self.public_world.id]))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'まだ投稿がありません。')
+		self.assertContains(response, 'タイムラインを再読み込みする')
 
 	def test_world_timeline_cursor_pagination_has_no_duplicates(self):
 		self.client.force_login(self.owner)

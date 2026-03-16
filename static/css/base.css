@@ -344,6 +344,53 @@ body {
   white-space: pre-wrap;
 }
 
+.timeline-controls {
+  margin-top: 0.9rem;
+}
+
+.timeline-end-message {
+  margin: 0;
+  color: #4f5952;
+  font-weight: 600;
+}
+
+.timeline-feedback {
+  margin: 0.65rem 0 0;
+  color: #315f50;
+  font-weight: 600;
+}
+
+.timeline-feedback.is-error {
+  color: #7e2020;
+}
+
+.timeline-retry {
+  margin-top: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e5b2b1;
+  border-radius: 10px;
+  background: #fdf0ef;
+  max-width: 520px;
+}
+
+.timeline-retry p {
+  margin: 0 0 0.55rem;
+  color: #7e2020;
+}
+
+.timeline-empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: #fdfaf4;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.timeline-empty-state p {
+  margin: 0;
+}
+
 .profile-card {
   max-width: 720px;
 }
