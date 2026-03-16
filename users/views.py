@@ -13,9 +13,9 @@ from django.utils import timezone
 
 from django.contrib.auth import get_user_model
 
-from worlds.models import Post
+from worlds.models import Post, WorldMembership
 
-from .models import Follow, FollowEvent
+from .models import Follow, FollowEvent, UserBlock
 from .forms import (
 	CustomUserCreationForm,
 	EmailOrHandleAuthenticationForm,
@@ -68,6 +68,60 @@ def _accepted_follow(viewer, profile_user):
 	).exists()
 
 
+def _find_block_reason(viewer, profile_user):
+	if not viewer.is_authenticated:
+		return ''
+	if UserBlock.objects.filter(blocker=profile_user, blocked=viewer).exists():
+		return 'このユーザーにブロックされているためフォローできません。'
+	if UserBlock.objects.filter(blocker=viewer, blocked=profile_user).exists():
+		return 'ブロック中のユーザーはフォローできません。'
+	return ''
+
+
+def _is_banned_by_profile_owner(viewer, profile_user):
+	if not viewer.is_authenticated:
+		return False
+	return WorldMembership.objects.filter(
+		world__owner=profile_user,
+		user=viewer,
+		status=WorldMembership.Status.BANNED,
+	).exists()
+
+
+def _can_view_private_profile_details(viewer, profile_user, is_self):
+	if not profile_user.is_private_account:
+		return True
+	if is_self:
+		return True
+	return _accepted_follow(viewer, profile_user)
+
+
+def _remove_follow_relation(follower, followee, actor):
+	follow = Follow.objects.filter(follower=follower, followee=followee).first()
+	if not follow:
+		return False
+	follow.delete()
+	_record_follow_event(FollowEvent.Action.REMOVE_BY_BLOCK, actor, follower)
+	return True
+
+
+def _accept_pending_requests_for_public_profile(user):
+	pending_follows = list(
+		Follow.objects.filter(
+			followee=user,
+			status=Follow.Status.PENDING,
+		).select_related('follower')
+	)
+	accepted_count = 0
+	for follow in pending_follows:
+		follow.status = Follow.Status.ACCEPTED
+		follow.accepted_at = timezone.now()
+		follow.save(update_fields=['status', 'accepted_at', 'updated_at'])
+		_record_follow_event(FollowEvent.Action.ACCEPT, user, follow.follower)
+		accepted_count += 1
+	return accepted_count
+
+
 class CustomLoginView(LoginView):
 	template_name = 'registration/login.html'
 	authentication_form = EmailOrHandleAuthenticationForm
@@ -112,9 +166,14 @@ def dashboard(request):
 @login_required
 def profile_settings(request):
 	if request.method == 'POST':
+		was_private = request.user.is_private_account
 		form = ProfileSettingsForm(request.POST, instance=request.user)
 		if form.is_valid():
-			form.save()
+			updated_user = form.save()
+			if was_private and not updated_user.is_private_account:
+				accepted_count = _accept_pending_requests_for_public_profile(updated_user)
+				if accepted_count:
+					messages.info(request, f'公開アカウントへの変更により、{accepted_count} 件のフォローリクエストを承認しました。')
 			return redirect('dashboard')
 	else:
 		form = ProfileSettingsForm(instance=request.user)
@@ -132,6 +191,17 @@ def follow_create(request, handle):
 		return _redirect_to_login(request, next_url)
 	if request.user.pk == profile_user.pk:
 		messages.warning(request, '自分自身をフォローすることはできません。')
+		return redirect(next_url)
+
+	block_reason = _find_block_reason(request.user, profile_user)
+	if block_reason:
+		_remove_follow_relation(request.user, profile_user, profile_user)
+		messages.warning(request, block_reason)
+		return redirect(next_url)
+
+	if _is_banned_by_profile_owner(request.user, profile_user):
+		_remove_follow_relation(request.user, profile_user, profile_user)
+		messages.warning(request, 'このユーザーが管理するWorldでBAN状態のためフォローできません。')
 		return redirect(next_url)
 
 	defaults = {'status': Follow.Status.PENDING}
@@ -246,6 +316,13 @@ def follow_reject(request, handle):
 
 def following_list(request, handle):
 	profile_user = _resolve_user_by_handle(handle)
+	is_self = request.user.is_authenticated and request.user.pk == profile_user.pk
+	if profile_user.is_private_account and not _can_view_private_profile_details(request.user, profile_user, is_self):
+		if not request.user.is_authenticated:
+			return _redirect_to_login(request, reverse('following_list', args=[profile_user.handle]))
+		messages.warning(request, '鍵アカウントのフォロー一覧はフォロワーのみ閲覧できます。')
+		return redirect('public_profile', handle=profile_user.handle)
+
 	following_edges = (
 		Follow.objects.filter(
 			follower=profile_user,
@@ -271,6 +348,13 @@ def following_list(request, handle):
 
 def follower_list(request, handle):
 	profile_user = _resolve_user_by_handle(handle)
+	is_self = request.user.is_authenticated and request.user.pk == profile_user.pk
+	if profile_user.is_private_account and not _can_view_private_profile_details(request.user, profile_user, is_self):
+		if not request.user.is_authenticated:
+			return _redirect_to_login(request, reverse('follower_list', args=[profile_user.handle]))
+		messages.warning(request, '鍵アカウントのフォロワー一覧はフォロワーのみ閲覧できます。')
+		return redirect('public_profile', handle=profile_user.handle)
+
 	follower_edges = (
 		Follow.objects.filter(
 			followee=profile_user,
@@ -299,9 +383,15 @@ def public_profile(request, handle):
 
 	is_self = request.user.is_authenticated and request.user.pk == profile_user.pk
 	viewer_follow = None
+	follow_action_blocked_reason = ''
 	if request.user.is_authenticated and not is_self:
 		viewer_follow = Follow.objects.filter(follower=request.user, followee=profile_user).first()
-	can_view_activity_summary = is_self or _accepted_follow(request.user, profile_user)
+		follow_action_blocked_reason = _find_block_reason(request.user, profile_user)
+		if not follow_action_blocked_reason and _is_banned_by_profile_owner(request.user, profile_user):
+			follow_action_blocked_reason = 'このユーザーが管理するWorldでBAN状態のためフォローできません。'
+
+	can_view_profile_details = _can_view_private_profile_details(request.user, profile_user, is_self)
+	can_view_activity_summary = can_view_profile_details and (is_self or _accepted_follow(request.user, profile_user))
 	recent_posts = []
 	top_worlds = []
 	following_count = Follow.objects.filter(follower=profile_user, status=Follow.Status.ACCEPTED).count()
@@ -334,6 +424,8 @@ def public_profile(request, handle):
 			'profile_user': profile_user,
 			'is_self': is_self,
 			'viewer_follow': viewer_follow,
+			'can_view_profile_details': can_view_profile_details,
+			'follow_action_blocked_reason': follow_action_blocked_reason,
 			'can_view_activity_summary': can_view_activity_summary,
 			'recent_posts': recent_posts,
 			'top_worlds': top_worlds,

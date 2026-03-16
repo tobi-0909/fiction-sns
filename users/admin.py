@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import CustomUser, Follow, FollowEvent
+from .models import CustomUser, Follow, FollowEvent, UserBlock
 
 
 @admin.register(CustomUser)
@@ -42,3 +42,15 @@ class FollowEventAdmin(admin.ModelAdmin):
         'target_handle_snapshot',
     )
     list_filter = ('action', 'created_at')
+
+
+@admin.register(UserBlock)
+class UserBlockAdmin(admin.ModelAdmin):
+    list_display = ('id', 'blocker', 'blocked', 'created_at')
+    search_fields = (
+        'blocker__email',
+        'blocker__handle',
+        'blocked__email',
+        'blocked__handle',
+    )
+    list_filter = ('created_at',)

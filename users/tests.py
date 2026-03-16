@@ -5,9 +5,9 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
-from worlds.models import Character, CharacterWorldEntry, Post, World
+from worlds.models import Character, CharacterWorldEntry, Post, World, WorldMembership
 
-from .models import Follow, FollowEvent
+from .models import Follow, FollowEvent, UserBlock
 
 
 User = get_user_model()
@@ -243,6 +243,119 @@ class PublicProfileTests(TestCase):
 		self.assertContains(first_page, '?page=2')
 		self.assertContains(second_page, '?page=1')
 
+	def test_private_profile_hides_details_from_non_follower(self):
+		private_user = User.objects.create_user(
+			username='private_hidden',
+			email='private_hidden@example.com',
+			password='pass12345',
+			handle='private_hidden',
+			display_name='Private Hidden',
+			bio='secret bio',
+			is_private_account=True,
+		)
+		self.client.force_login(self.viewer)
+		response = self.client.get(reverse('public_profile', args=['private_hidden']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'この鍵アカウントのプロフィール詳細は、承認済みフォロワーのみ閲覧できます。')
+		self.assertNotContains(response, 'secret bio')
+
+	def test_private_profile_shows_details_for_accepted_follower(self):
+		private_user = User.objects.create_user(
+			username='private_visible',
+			email='private_visible@example.com',
+			password='pass12345',
+			handle='private_visible',
+			display_name='Private Visible',
+			bio='visible bio',
+			is_private_account=True,
+		)
+		Follow.objects.create(
+			follower=self.viewer,
+			followee=private_user,
+			status=Follow.Status.ACCEPTED,
+		)
+		self.client.force_login(self.viewer)
+		response = self.client.get(reverse('public_profile', args=['private_visible']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'visible bio')
+
+	def test_private_following_list_denied_for_non_follower(self):
+		private_user = User.objects.create_user(
+			username='private_list',
+			email='private_list@example.com',
+			password='pass12345',
+			handle='private_list',
+			display_name='Private List',
+			is_private_account=True,
+		)
+		self.client.force_login(self.viewer)
+		response = self.client.get(reverse('following_list', args=['private_list']))
+		self.assertRedirects(response, reverse('public_profile', args=['private_list']))
+
+	def test_follow_create_is_blocked_when_user_is_blocked(self):
+		UserBlock.objects.create(blocker=self.user, blocked=self.viewer)
+		self.client.force_login(self.viewer)
+		response = self.client.post(
+			reverse('follow_create', args=['alice']),
+			{'next': reverse('public_profile', args=['alice'])},
+			follow=True,
+		)
+		self.assertRedirects(response, reverse('public_profile', args=['alice']))
+		self.assertFalse(Follow.objects.filter(follower=self.viewer, followee=self.user).exists())
+		self.assertContains(response, 'このユーザーにブロックされているためフォローできません。')
+
+	def test_follow_create_is_blocked_when_user_is_banned_in_owner_world(self):
+		owned_world = World.objects.create(
+			title='Owner World',
+			owner=self.user,
+			visibility=World.Visibility.PUBLIC,
+		)
+		WorldMembership.objects.create(
+			world=owned_world,
+			user=self.viewer,
+			status=WorldMembership.Status.BANNED,
+		)
+		self.client.force_login(self.viewer)
+		response = self.client.post(
+			reverse('follow_create', args=['alice']),
+			{'next': reverse('public_profile', args=['alice'])},
+			follow=True,
+		)
+		self.assertRedirects(response, reverse('public_profile', args=['alice']))
+		self.assertFalse(Follow.objects.filter(follower=self.viewer, followee=self.user).exists())
+		self.assertContains(response, 'このユーザーが管理するWorldでBAN状態のためフォローできません。')
+
+	def test_private_to_public_accepts_pending_follow_requests(self):
+		private_user = User.objects.create_user(
+			username='private_to_public',
+			email='private_to_public@example.com',
+			password='pass12345',
+			handle='private_to_public',
+			display_name='Private To Public',
+			is_private_account=True,
+		)
+		Follow.objects.create(
+			follower=self.viewer,
+			followee=private_user,
+			status=Follow.Status.PENDING,
+		)
+
+		self.client.force_login(private_user)
+		response = self.client.post(
+			reverse('profile_settings'),
+			{
+				'handle': 'private_to_public',
+				'display_name': 'Private To Public',
+				'bio': '',
+				'is_private_account': '',
+			},
+			follow=True,
+		)
+
+		self.assertRedirects(response, reverse('dashboard'))
+		updated_follow = Follow.objects.get(follower=self.viewer, followee=private_user)
+		self.assertEqual(updated_follow.status, Follow.Status.ACCEPTED)
+
 
 class FollowModelTests(TestCase):
 	def setUp(self):
@@ -282,3 +395,12 @@ class FollowModelTests(TestCase):
 		)
 		self.assertEqual(event.actor_handle_snapshot, 'follow_alice')
 		self.assertEqual(event.target_handle_snapshot, 'follow_bob')
+
+	def test_user_block_prevents_self_block(self):
+		with self.assertRaises(ValidationError):
+			UserBlock.objects.create(blocker=self.alice, blocked=self.alice)
+
+	def test_user_block_prevents_duplicate_edge(self):
+		UserBlock.objects.create(blocker=self.alice, blocked=self.bob)
+		with self.assertRaises(ValidationError):
+			UserBlock.objects.create(blocker=self.alice, blocked=self.bob)
