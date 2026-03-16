@@ -43,8 +43,8 @@
   </div>
 
   <div class="profile-activity-bar">
-    <span>フォロー {{ following_count }}</span>
-    <span>フォロワー {{ follower_count }}</span>
+    <a class="count-link" href="{% url 'following_list' handle=profile_user.handle|default:profile_user.username %}">フォロー {{ following_count }}</a>
+    <a class="count-link" href="{% url 'follower_list' handle=profile_user.handle|default:profile_user.username %}">フォロワー {{ follower_count }}</a>
   </div>
 
   <div class="profile-activity">

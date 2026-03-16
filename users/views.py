@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.db.models import Count
+from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponseNotAllowed
@@ -241,6 +242,56 @@ def follow_reject(request, handle):
 	_record_follow_event(FollowEvent.Action.REJECT, request.user, requester)
 	messages.success(request, f'@{requester.handle} のフォローリクエストを拒否しました。')
 	return redirect('follow_request_list')
+
+
+def following_list(request, handle):
+	profile_user = _resolve_user_by_handle(handle)
+	following_edges = (
+		Follow.objects.filter(
+			follower=profile_user,
+			status=Follow.Status.ACCEPTED,
+		)
+		.select_related('followee')
+		.order_by('-accepted_at', '-created_at')
+	)
+	paginator = Paginator(following_edges, 20)
+	page_obj = paginator.get_page(request.GET.get('page'))
+	return render(
+		request,
+		'users/follow_list.html',
+		{
+			'profile_user': profile_user,
+			'page_obj': page_obj,
+			'list_type': 'following',
+			'title': 'フォロー中',
+			'empty_message': 'まだ誰もフォローしていません。',
+		},
+	)
+
+
+def follower_list(request, handle):
+	profile_user = _resolve_user_by_handle(handle)
+	follower_edges = (
+		Follow.objects.filter(
+			followee=profile_user,
+			status=Follow.Status.ACCEPTED,
+		)
+		.select_related('follower')
+		.order_by('-accepted_at', '-created_at')
+	)
+	paginator = Paginator(follower_edges, 20)
+	page_obj = paginator.get_page(request.GET.get('page'))
+	return render(
+		request,
+		'users/follow_list.html',
+		{
+			'profile_user': profile_user,
+			'page_obj': page_obj,
+			'list_type': 'followers',
+			'title': 'フォロワー',
+			'empty_message': 'まだフォロワーはいません。',
+		},
+	)
 
 
 def public_profile(request, handle):
