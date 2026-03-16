@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}参加管理 | {{ world.title }}{% endblock %}
+
+{% block content %}
+<section class="hero world-hero">
+  <div class="world-hero-header">
+    <h2>{{ world.title }} の参加管理</h2>
+    <a class="action-link" href="{% url 'world_list' %}">World一覧へ戻る</a>
+  </div>
+
+  <p>active の参加者には kick、任意ユーザーには ban を実行できます。</p>
+
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">実行する</button>
+  </form>
+</section>
+
+<section class="hero world-hero">
+  <h3>参加状態</h3>
+  {% if memberships %}
+    <ul class="world-list">
+      {% for membership in memberships %}
+        <li class="world-item">
+          <div>
+            <h3>@{{ membership.user.handle|default:membership.user.username }}</h3>
+            <p>status: <strong>{{ membership.status }}</strong> / role: {{ membership.role }}</p>
+            <small>joined: {{ membership.joined_at|date:"Y-m-d H:i" }}</small>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>まだ参加レコードはありません。</p>
+  {% endif %}
+</section>
+
+<section class="hero world-hero">
+  <h3>監査ログ</h3>
+  {% if logs %}
+    <ul class="world-list">
+      {% for log in logs %}
+        <li class="world-item">
+          <div>
+            <p><strong>{{ log.action }}</strong>: @{{ log.target_user.handle|default:log.target_user.username }}</p>
+            <small>@{{ log.actor.handle|default:log.actor.username }} / {{ log.created_at|date:"Y-m-d H:i" }}</small>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>まだ監査ログはありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

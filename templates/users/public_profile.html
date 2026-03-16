@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}@{{ profile_user.handle|default:profile_user.username }} | プロフィール{% endblock %}
+
+{% block content %}
+<section class="hero profile-card">
+  <div class="profile-top">
+    <div class="profile-header">
+      <h2>{{ profile_user.display_name|default:profile_user.handle }}</h2>
+      <p class="profile-handle">@{{ profile_user.handle|default:profile_user.username }}</p>
+      {% if profile_user.is_private_account %}
+        <p class="helptext">鍵アカウント</p>
+      {% endif %}
+    </div>
+
+    <div class="profile-action-bar">
+      {% if is_self %}
+        <a class="action-link" href="{% url 'profile_settings' %}">プロフィールを編集する</a>
+        <a class="action-link" href="{% url 'follow_request_list' %}">フォローリクエスト{% if pending_request_count %} ({{ pending_request_count }}){% endif %}</a>
+      {% else %}
+        {% if viewer_follow and viewer_follow.status == 'accepted' %}
+          <button type="button" class="action-button" onclick="document.getElementById('unfollow-dialog').showModal()">フォロー中</button>
+        {% elif viewer_follow and viewer_follow.status == 'pending' %}
+          <form method="post" action="{% url 'follow_delete' profile_user.handle %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="secondary-button">リクエスト送信済み</button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'follow_create' profile_user.handle %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="action-button">{% if profile_user.is_private_account %}フォローをリクエスト{% else %}フォロー{% endif %}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="profile-bio">
+    <h3>自己紹介</h3>
+    <p>{{ profile_user.bio|default:"自己紹介はまだ設定されていません。"|linebreaksbr }}</p>
+  </div>
+
+  <div class="profile-activity-bar">
+    <span>フォロー {{ following_count }}</span>
+    <span>フォロワー {{ follower_count }}</span>
+  </div>
+
+  <div class="profile-activity">
+    <h3>活動サマリー</h3>
+    {% if can_view_activity_summary %}
+      <h4>最近の投稿</h4>
+      {% if recent_posts %}
+        <ul class="summary-list">
+          {% for post in recent_posts %}
+            <li>
+              <strong>{{ post.character.name }}</strong>
+              <span>in {{ post.world.title }}</span>
+              <small>{{ post.created_at|date:"Y-m-d H:i" }}</small>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>まだ投稿がありません。</p>
+      {% endif %}
+
+      <h4>よく書くWorld</h4>
+      {% if top_worlds %}
+        <ul class="summary-list">
+          {% for world_row in top_worlds %}
+            <li>
+              <span>{{ world_row.world__title }}</span>
+              <strong>{{ world_row.post_count }}投稿</strong>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>集計対象の投稿がありません。</p>
+      {% endif %}
+    {% else %}
+      <p>活動サマリーはフォロワー向け機能です。現在は本人のみ表示しています。</p>
+    {% endif %}
+  </div>
+
+</section>
+
+{% if viewer_follow and viewer_follow.status == 'accepted' %}
+<dialog id="unfollow-dialog" class="login-required-dialog">
+  <div class="dialog-body">
+    <h3>フォロー解除</h3>
+    <p>@{{ profile_user.handle }} のフォローを解除しますか？</p>
+    <div class="dialog-actions">
+      <button type="button" id="unfollow-confirm" class="action-button danger-button">解除する</button>
+      <button type="button" class="secondary-action" onclick="document.getElementById('unfollow-dialog').close()">キャンセル</button>
+    </div>
+  </div>
+</dialog>
+<form id="unfollow-form" method="post" action="{% url 'follow_delete' profile_user.handle %}" style="display:none;">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.path }}">
+</form>
+<script>
+  document.getElementById('unfollow-confirm').addEventListener('click', function () {
+    document.getElementById('unfollow-form').submit();
+  });
+</script>
+{% endif %}
+{% endblock %}

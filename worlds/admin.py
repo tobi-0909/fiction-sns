@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from .models import Character, Post, World
+from .models import Character, Post, World, WorldMembership, WorldModerationLog
 
 
 @admin.register(World)
 class WorldAdmin(admin.ModelAdmin):
-	list_display = ('id', 'title', 'owner', 'created_at')
+	list_display = ('id', 'title', 'visibility', 'owner', 'created_at')
 	search_fields = ('title', 'owner__email', 'owner__handle')
-	list_filter = ('created_at',)
+	list_filter = ('visibility', 'created_at')
 
 
 @admin.register(Character)
@@ -22,3 +22,17 @@ class PostAdmin(admin.ModelAdmin):
 	list_display = ('id', 'world', 'character', 'author', 'created_at')
 	search_fields = ('world__title', 'character__name', 'author__email', 'author__handle', 'text')
 	list_filter = ('created_at', 'world', 'character')
+
+
+@admin.register(WorldMembership)
+class WorldMembershipAdmin(admin.ModelAdmin):
+	list_display = ('id', 'world', 'user', 'role', 'status', 'joined_at', 'updated_at')
+	search_fields = ('world__title', 'user__email', 'user__handle')
+	list_filter = ('role', 'status', 'world')
+
+
+@admin.register(WorldModerationLog)
+class WorldModerationLogAdmin(admin.ModelAdmin):
+	list_display = ('id', 'world', 'actor', 'target_user', 'action', 'created_at')
+	search_fields = ('world__title', 'actor__email', 'actor__handle', 'target_user__email', 'target_user__handle')
+	list_filter = ('action', 'world', 'created_at')

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}投稿する | {{ world.title }}{% endblock %}
+
+{% block content %}
+<section class="hero auth-card">
+  <div class="world-hero-header">
+    <h2>{{ world.title }} に投稿する</h2>
+    <a class="action-link" href="{% url 'world_timeline' world.id %}">タイムラインへ戻る</a>
+  </div>
+
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">投稿する</button>
+  </form>
+
+  {% if not form.fields.character.queryset %}
+    <p class="helptext">投稿にはCharacterが必要です。先にCharacterを作成してください。</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,47 +1,47 @@
 # Roadmap
 
-この文書は、プロダクトの長期方針を管理するためのものです。
+This document tracks long-term product direction.
 
-## プロダクトビジョン
-ユーザーが作品世界（World）とキャラクター（Character）を作成し、タイムライン投稿を行い、将来的に AI 機能（生成または要約）も扱える AI キャラクター SNS を作る。
+## Product Vision
+Create an AI Character SNS where users can build fictional worlds and characters, publish timeline posts, and optionally use AI features (generation or summarization).
 
-## 段階ゴール
+## Stage Goals
 
-### Goal 0: 環境整備
-- Python + Django のローカル起動ができる
-- GitHub リポジトリを初期化し同期できる
+### Goal 0: Environment Setup
+- Python + Django local setup works
+- GitHub repository initialized and synced
 
-### Goal 1: 認証 + World/Character 管理
-- ユーザー登録 / ログイン / ログアウト
-- スマホブラウザから World を作成・編集できる
-- World に紐づく Character を作成・編集できる
+### Goal 1: Auth + World/Character Management
+- User sign-up/login/logout
+- Create/edit World from mobile browser
+- Create/edit Character linked to World
 
-### Goal 2: 人力タイムライン
-- World ごとのタイムライン表示
-- Character を選んで投稿できる
-- スマホで読みやすくスクロールできる
+### Goal 2: Manual Timeline
+- Timeline per World
+- Post as selected Character
+- Mobile-friendly scrolling timeline
 
-### Goal 3: 最初の AI 連携
-次のどちらかを先に実装する:
-- キャラクター投稿の生成
-- 投稿範囲の要約生成
+### Goal 3: First AI Integration
+Implement one of:
+- Character post generation
+- Story summary generation
 
-### Goal 4: ユーザー状態の保持
-次のどちらかを実装する:
-- World フォロー機能
-- 読了位置（Read Progress）記録
+### Goal 4: User State Persistence
+Implement one of:
+- Follow World feature
+- Read position tracking
 
-### Goal 5+: AI と UX の段階的拡張
-- プロンプト品質の改善
-- タイムライン UX の改善
-- 運用面の強化
+### Goal 5+: Progressive AI and UX Expansion
+- Deeper prompt quality
+- Better timeline UX
+- Operational hardening
 
-## 実装順序の原則
-Goal 1〜2 のデータモデルと基本テストが安定するまでは Goal 3 を開始しない。
+## Sequencing Principle
+Do not start Goal 3 until Goals 1-2 have stable data models and basic tests.
 
-## Milestone 完了の定義
-Milestone は次を満たしたときのみ完了とする:
-- デスクトップとスマホブラウザで機能が動作する
-- マイグレーション状態がクリーンである
-- 基本テストが通る
-- docs/status.md に進捗が反映されている
+## Definition of "Milestone Done"
+A milestone is done only when:
+- Feature works on desktop and mobile browser
+- Migration state is clean
+- Basic tests pass
+- Documentation is updated in `docs/status.md`

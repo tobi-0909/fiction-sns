@@ -1,43 +1,40 @@
-# Fiction SNS
+# fiction-sns
 
-Fiction SNS は、フィクション作品のキャラクターがそれぞれの世界で投稿しているように見える、SNS風タイムラインを目指す実験プロジェクトです。
+A staged Django project toward an AI character social timeline.
 
-現在このリポジトリで実装しているのは Django プロトタイプです。長期的には Next.js + TypeScript + PostgreSQL + Prisma の構成を想定しています。
+## Why This Repository Exists
+This repository is the implementation of early milestones for a larger product vision:
+- Final vision: AI Character SNS
+- Current scope: milestones up to manual timeline (no AI yet)
 
-## 現在のスコープ
-- 最終ビジョン: AI キャラクター SNS
-- 現在の実装範囲: Milestone 1〜3（AI 連携はまだ実施しない）
+## Current Stage
+- Environment setup completed (Python, venv, Django)
+- Django project and `home` app created
+- Root URL connected to `home.index`
+- Initial page responds at `/`
+- Source is pushed to GitHub
 
-## クイックスタート（現行 Django プロトタイプ）
+## Project Management Rule
+Keep planning and execution explicit in-repo:
+- Product direction and long-term path: `docs/roadmap.md`
+- Milestone definitions and acceptance criteria: `docs/milestones.md`
+- Ongoing progress and next actions: `docs/status.md`
 
-1. 仮想環境を作成して有効化（初回のみ）:
+## Immediate Target
+Ship milestones 1-3 first:
+1. Foundation and basic pages
+2. Auth + World/Character CRUD
+3. Manual timeline posting
 
-```cmd
+## Development Commands
+```bash
 python -m venv venv
-venv\Scripts\activate.bat
-```
-
-2. 依存関係をインストール:
-
-```cmd
+source venv/bin/activate  # Windows: venv\\Scripts\\activate.bat
 pip install django
+python manage.py runserver
 ```
 
-3. 開発サーバーを起動:
-
-```cmd
-py manage.py runserver
-```
-
-4. ブラウザで開く:
-
-- http://127.0.0.1:8000/
-
-## Documentation
-
-- 全体方針とアーキテクチャ: docs/PROJECT_GUIDE.md
-- 開発フローとブランチ運用: docs/WORKFLOW.md
-- プロダクトロードマップ（既存）: docs/ROADMAP.md
-- Milestone / Issue 運用: docs/ISSUE_WORKFLOW.md
-- Milestone 計画と Issue 下書き: docs/MILESTONE_PLAN.md, docs/ISSUE_SEEDS.md
-- 実行管理ドキュメント（今回追加）: docs/roadmap.md, docs/milestones.md, docs/status.md
+## Next Recommended Additions
+- Add `.gitignore` for `venv/`, `__pycache__/`, and local DB artifacts if needed
+- Add `requirements.txt` once dependencies increase
+- Add tests per milestone acceptance criteria

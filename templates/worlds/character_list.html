@@ -6,30 +6,43 @@
 <section class="hero world-hero">
   <div class="world-hero-header">
     <h2>{{ world.title }} のCharacter一覧</h2>
-    <a class="action-link" href="{% url 'character_create' world.id %}">+ 新規作成</a>
+    <div>
+      <a class="action-link" href="{% url 'character_create' world.id %}">+ 新規作成</a>
+      <a class="action-link" href="{% url 'character_bring_in' world.id %}">+ 持ち込む</a>
+    </div>
   </div>
 
   <p><a href="{% url 'world_list' %}">← World一覧へ戻る</a></p>
 
-  {% if characters %}
+  {% if entries %}
     <ul class="world-list">
-      {% for character in characters %}
+      {% for entry in entries %}
         <li class="world-item">
           <div>
-            <h3>{{ character.name }}</h3>
-            <p><strong>プロフィール:</strong><br>{{ character.profile|default:"未設定"|linebreaksbr }}</p>
-            <p><strong>性格・口調メモ:</strong><br>{{ character.personality|default:"未設定"|linebreaksbr }}</p>
-            <small>作成日: {{ character.created_at|date:"Y-m-d H:i" }}</small>
+            <h3>
+              {{ entry.character.name }}
+              {% if entry.character.world_id != world.id %}
+                <small style="color:#888;">（ホーム: {{ entry.character.world.title }}）</small>
+              {% endif %}
+            </h3>
+            {% if entry.character.owner %}
+              <small>作者: @{{ entry.character.owner.handle|default:entry.character.owner.username }}</small>
+            {% endif %}
+            <p><strong>プロフィール:</strong><br>{{ entry.character.profile|default:"未設定"|linebreaksbr }}</p>
+            <p><strong>性格・口調メモ:</strong><br>{{ entry.character.personality|default:"未設定"|linebreaksbr }}</p>
+            <small>追加日: {{ entry.created_at|date:"Y-m-d H:i" }}</small>
           </div>
-          <div class="world-actions">
-            <a href="{% url 'character_edit' world.id character.id %}">編集</a>
-            <a class="danger-link" href="{% url 'character_delete' world.id character.id %}">削除</a>
-          </div>
+          {% if entry.character.owner == request.user or not entry.character.owner %}
+            <div class="world-actions">
+              <a href="{% url 'character_edit' world.id entry.character.id %}">編集</a>
+              <a class="danger-link" href="{% url 'character_delete' world.id entry.character.id %}">削除</a>
+            </div>
+          {% endif %}
         </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p>まだCharacterがありません。新規作成しましょう。</p>
+    <p>まだCharacterがありません。新規作成か持ち込みをしましょう。</p>
   {% endif %}
 </section>
 {% endblock %}

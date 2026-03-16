@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}キャラ持ち込み | {{ world.title }} | Fictions Flow SNS{% endblock %}
+
+{% block content %}
+<section class="hero world-hero">
+  <h2>キャラクターを持ち込む</h2>
+  <p>World: <strong>{{ world.title }}</strong></p>
+  <p><a href="{% url 'character_list' world.id %}">← Character一覧へ戻る</a></p>
+
+  <p>
+    あなたが所有するキャラクターをこのWorldに追加できます。<br>
+    追加後は、このWorldへの投稿時に選択できるようになります。
+  </p>
+
+  {% if available_characters %}
+    <form method="post">
+      {% csrf_token %}
+      <ul class="world-list">
+        {% for character in available_characters %}
+          <li class="world-item">
+            <div>
+              <h3>{{ character.name }}</h3>
+              <small>ホームWorld: {{ character.world.title }}</small>
+              {% if character.profile %}
+                <p>{{ character.profile|truncatechars:80 }}</p>
+              {% endif %}
+            </div>
+            <div class="world-actions">
+              <button type="submit" name="character_id" value="{{ character.id }}">このWorldに追加</button>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </form>
+  {% else %}
+    <p>持ち込めるキャラクターがありません。</p>
+    <ul>
+      <li>あなたが所有するキャラクターがまだ存在しない場合は、まず<a href="{% url 'world_list' %}">自分のWorldでCharacterを作成</a>してください。</li>
+      <li>既にすべてのキャラクターがこのWorldに追加済みです。</li>
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}

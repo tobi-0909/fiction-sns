@@ -6,6 +6,16 @@
 <section class="hero world-hero">
   <div class="world-hero-header">
     <h2>{{ world.title }} タイムライン</h2>
+    {% if can_post %}
+      <a class="action-link" href="{% url 'post_create' world.id %}">投稿する</a>
+    {% elif not request.user.is_authenticated %}
+      <div class="inline-action-group">
+        <button type="button" class="action-button" data-open-login-dialog>
+          ログインして投稿する
+        </button>
+        <small>投稿にはログインが必要です。</small>
+      </div>
+    {% endif %}
   </div>
 
   <p>{{ world.description|default:"このWorldの説明は未設定です。" }}</p>
@@ -27,4 +37,50 @@
     <p>まだ投稿がありません。</p>
   {% endif %}
 </section>
+
+{% if not request.user.is_authenticated %}
+  <dialog class="login-required-dialog" data-login-dialog>
+    <div class="dialog-body">
+      <h3>この操作にはログインが必要です</h3>
+      <p>ログインすると、このWorldでそのまま投稿を始められます。アカウントがない場合は新規登録から進めます。</p>
+      <div class="dialog-actions">
+        <a class="action-link" href="{{ login_to_post_url }}">ログインへ進む</a>
+        <a class="secondary-action" href="{{ signup_to_post_url }}">新規登録する</a>
+      </div>
+      <button type="button" class="text-button" data-close-login-dialog>閉じる</button>
+    </div>
+  </dialog>
+  <script>
+    (function () {
+      const dialog = document.querySelector('[data-login-dialog]');
+      const openButton = document.querySelector('[data-open-login-dialog]');
+      const closeButton = document.querySelector('[data-close-login-dialog]');
+      if (!dialog || !openButton || !closeButton || typeof dialog.showModal !== 'function') {
+        if (openButton) {
+          openButton.addEventListener('click', function () {
+            window.location.href = '{{ login_to_post_url|escapejs }}';
+          });
+        }
+        return;
+      }
+      openButton.addEventListener('click', function () {
+        dialog.showModal();
+      });
+      closeButton.addEventListener('click', function () {
+        dialog.close();
+      });
+      dialog.addEventListener('click', function (event) {
+        const bounds = dialog.getBoundingClientRect();
+        const clickedOutside =
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom;
+        if (clickedOutside) {
+          dialog.close();
+        }
+      });
+    })();
+  </script>
+{% endif %}
 {% endblock %}

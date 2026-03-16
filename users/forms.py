@@ -64,10 +64,12 @@ class ProfileSettingsForm(forms.ModelForm):
         help_text='@は不要です。英数字と_のみ利用できます。',
     )
     display_name = forms.CharField(label='表示名', max_length=50, required=False)
+    bio = forms.CharField(label='自己紹介', required=False, widget=forms.Textarea(attrs={'rows': 5, 'maxlength': 500}))
+    is_private_account = forms.BooleanField(label='鍵アカウントにする', required=False)
 
     class Meta:
         model = User
-        fields = ('handle', 'display_name')
+        fields = ('handle', 'display_name', 'bio', 'is_private_account')
 
     def clean_handle(self):
         handle = self.cleaned_data['handle'].strip().lstrip('@').lower()
