@@ -108,3 +108,39 @@ class FollowEvent(models.Model):
         actor = self.actor_handle_snapshot or 'unknown'
         target = self.target_handle_snapshot or 'unknown'
         return f'{self.action}: {actor} -> {target}'
+
+
+class UserBlock(models.Model):
+    blocker = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.CASCADE,
+        related_name='blocking_edges',
+    )
+    blocked = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.CASCADE,
+        related_name='blocked_by_edges',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['blocker', 'blocked'], name='unique_user_block'),
+            models.CheckConstraint(
+                condition=~Q(blocker=F('blocked')),
+                name='block_no_self_block',
+            ),
+        ]
+        ordering = ['-created_at']
+
+    def clean(self):
+        super().clean()
+        if self.blocker_id and self.blocker_id == self.blocked_id:
+            raise ValidationError({'blocked': '自分自身をブロックすることはできません。'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.blocker} blocks {self.blocked}'
