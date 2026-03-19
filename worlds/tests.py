@@ -635,3 +635,259 @@ class ModerationTests(TestCase):
 		).exists())
 
 		self.assertEqual(response.status_code, 200)
+
+
+class TimelineBlockingTests(TestCase):
+	"""タイムライン遮断ルール検証テスト（仕様: docs/TIMELINE_BLOCKING_SPEC.md）"""
+
+	def setUp(self):
+		"""各テスト前の共通設定"""
+		self.user_a = User.objects.create_user(
+			username='user_a',
+			email='user_a@example.com',
+			password='pass12345',
+			handle='user_a',
+		)
+		self.user_b = User.objects.create_user(
+			username='user_b',
+			email='user_b@example.com',
+			password='pass12345',
+			handle='user_b',
+		)
+		self.user_c = User.objects.create_user(
+			username='user_c',
+			email='user_c@example.com',
+			password='pass12345',
+			handle='user_c',
+		)
+
+		self.world = World.objects.create(
+			title='Test World',
+			owner=self.user_a,
+			visibility=World.Visibility.PUBLIC,
+		)
+		self.character_a = Character.objects.create(
+			world=self.world,
+			name='Character A',
+			owner=self.user_a,
+		)
+		self.character_b = Character.objects.create(
+			world=self.world,
+			name='Character B',
+			owner=self.user_b,
+		)
+		CharacterWorldEntry.objects.create(
+			character=self.character_a,
+			world=self.world,
+			added_by=self.user_a,
+		)
+		CharacterWorldEntry.objects.create(
+			character=self.character_b,
+			world=self.world,
+			added_by=self.user_b,
+		)
+
+		# User A と B から各 3 投稿作成
+		self.posts_b = []
+		for i in range(3):
+			post = Post.objects.create(
+				world=self.world,
+				character=self.character_b,
+				author=self.user_b,
+				text=f'Post {i+1} from user_b',
+			)
+			self.posts_b.append(post)
+
+		self.posts_a = []
+		for i in range(3):
+			post = Post.objects.create(
+				world=self.world,
+				character=self.character_a,
+				author=self.user_a,
+				text=f'Post {i+1} from user_a',
+			)
+			self.posts_a.append(post)
+
+	def _get_timeline_post_ids(self, user, world):
+		"""タイムラインから見える投稿 ID リストを取得"""
+		self.client.force_login(user)
+		response = self.client.get(reverse('world_timeline', args=[world.id]))
+		self.assertEqual(response.status_code, 200)
+		posts = response.context.get('posts', [])
+		return [post.id for post in posts]
+
+	def _setup_block(self, blocker, blocked):
+		"""ブロック関係を設定"""
+		from users.models import UserBlock
+		UserBlock.objects.create(blocker=blocker, blocked=blocked)
+
+	# Layer 1: ユーザーレベル（ブロック）テスト
+
+	def test_blocked_user_posts_hidden_from_blocker(self):
+		"""**T1-1** A が B をブロック → A は B の投稿を見ない"""
+		self._setup_block(self.user_a, self.user_b)
+
+		visible_posts = self._get_timeline_post_ids(self.user_a, self.world)
+
+		# A の投稿 3 つだけ表示、B の投稿 3 つは除外
+		self.assertEqual(len(visible_posts), 3)
+		for post_id in visible_posts:
+			self.assertNotIn(post_id, [p.id for p in self.posts_b])
+
+	def test_block_is_unidirectional(self):
+		"""**T1-2** A が B をブロック → B は A の投稿を普通に見える"""
+		self._setup_block(self.user_a, self.user_b)
+
+		visible_posts = self._get_timeline_post_ids(self.user_b, self.world)
+
+		# B は A の投稿 3 つを普通に見える
+		self.assertEqual(len(visible_posts), 6)  # B 自分の 3 + A の 3
+		post_ids = [p.id for p in self.posts_a]
+		for post_id in post_ids:
+			self.assertIn(post_id, visible_posts)
+
+	def test_unblock_shows_posts_again(self):
+		"""**T1-3** A が B をブロック → アンブロック → A は B の投稿を見える"""
+		from users.models import UserBlock
+
+		# ブロック設定
+		block = UserBlock.objects.create(blocker=self.user_a, blocked=self.user_b)
+		
+		# ブロック中は見えない
+		visible_before = self._get_timeline_post_ids(self.user_a, self.world)
+		self.assertEqual(len(visible_before), 3)  # A の投稿のみ
+
+		# ブロック解除
+		block.delete()
+
+		# アンブロック後は見える
+		visible_after = self._get_timeline_post_ids(self.user_a, self.world)
+		self.assertEqual(len(visible_after), 6)  # A の 3 + B の 3
+
+	def test_mutual_blocks(self):
+		"""**T1-4** A ↔ B mutual block → 双方は互いに投稿を見ない"""
+		self._setup_block(self.user_a, self.user_b)
+		self._setup_block(self.user_b, self.user_a)
+
+		# A から見た場合
+		visible_a = self._get_timeline_post_ids(self.user_a, self.world)
+		# A の投稿 3 つのみ（B の投稿は除外）
+		self.assertEqual(len(visible_a), 3)
+
+		# B から見た場合
+		visible_b = self._get_timeline_post_ids(self.user_b, self.world)
+		# B の投稿 3 つのみ（A の投稿は除外）
+		self.assertEqual(len(visible_b), 3)
+
+	# Layer 3: アカウント停止テスト
+
+	def test_inactive_user_posts_hidden(self):
+		"""**T3-1** B のアカウントが停止中 → 全員が B の投稿を見ない"""
+		# B のアカウント停止
+		self.user_b.is_active = False
+		self.user_b.save()
+
+		# A から見た場合
+		visible_a = self._get_timeline_post_ids(self.user_a, self.world)
+		# A の投稿 3 つのみ（B は停止中なため除外）
+		self.assertEqual(len(visible_a), 3)
+
+		# C (未認証) から見た場合
+		visible_c = self._get_timeline_post_ids(self.user_c, self.world)
+		# B は停止中なため除外
+		self.assertNotIn(self.posts_b[0].id, visible_c)
+
+	def test_inactive_user_posts_visible_after_reactivation(self):
+		"""**T3-2** B 停止 → 再開 → B の投稿が再表示"""
+		# B のアカウント停止
+		self.user_b.is_active = False
+		self.user_b.save()
+
+		visible_before = self._get_timeline_post_ids(self.user_a, self.world)
+		self.assertEqual(len(visible_before), 3)  # A のみ
+
+		# B を再開
+		self.user_b.is_active = True
+		self.user_b.save()
+
+		# 投稿が再表示
+		visible_after = self._get_timeline_post_ids(self.user_a, self.world)
+		self.assertEqual(len(visible_after), 6)  # A の 3 + B の 3
+
+	# 複合シナリオテスト
+
+	def test_block_overrides_follow_relationship(self):
+		"""**T4-1** A が B をフォロー + ブロック → B の投稿は表示されない"""
+		from users.models import Follow
+
+		# A が B をフォロー
+		Follow.objects.create(
+			follower=self.user_a,
+			followee=self.user_b,
+			status=Follow.Status.ACCEPTED,
+		)
+
+		# A が B をブロック
+		self._setup_block(self.user_a, self.user_b)
+
+		# ブロックが優先される
+		visible = self._get_timeline_post_ids(self.user_a, self.world)
+		self.assertEqual(len(visible), 3)  # A の投稿のみ
+
+	def test_multiple_blocked_users_excluded(self):
+		"""**T4-2** A が B, C をブロック → A は両者の投稿を見ない"""
+		# C から投稿を追加
+		post_c = Post.objects.create(
+			world=self.world,
+			character=self.character_a,  # 簡易: A のキャラで投稿（実装では C のキャラを使用）
+			author=self.user_c,
+			text='Post from user_c',
+		)
+
+		# A が B, C をブロック
+		self._setup_block(self.user_a, self.user_b)
+		self._setup_block(self.user_a, self.user_c)
+
+		visible = self._get_timeline_post_ids(self.user_a, self.world)
+
+		# A の投稿のみ
+		self.assertEqual(len(visible), 3)
+		self.assertNotIn(post_c.id, visible)
+
+	def test_timeline_respects_blocking_across_worlds(self):
+		"""**T4-3** ブロック関係は複数 World で一貫性を持つ（同じユーザーブロック）"""
+		# 別の World を作成
+		world_2 = World.objects.create(
+			title='Another World',
+			owner=self.user_a,
+			visibility=World.Visibility.PUBLIC,
+		)
+		char_b2 = Character.objects.create(
+			world=world_2,
+			name='Char B in World 2',
+			owner=self.user_b,
+		)
+		CharacterWorldEntry.objects.create(
+			character=char_b2,
+			world=world_2,
+			added_by=self.user_b,
+		)
+
+		# World 2 に B の投稿を追加
+		post_b_w2 = Post.objects.create(
+			world=world_2,
+			character=char_b2,
+			author=self.user_b,
+			text='Post in world 2',
+		)
+
+		# A が B をブロック
+		self._setup_block(self.user_a, self.user_b)
+
+		# World 1 で見える投稿
+		visible_w1 = self._get_timeline_post_ids(self.user_a, self.world)
+		self.assertEqual(len(visible_w1), 3)
+
+		# World 2 でも見えない（ブロックは World 横断で有効）
+		visible_w2 = self._get_timeline_post_ids(self.user_a, world_2)
+		self.assertNotIn(post_b_w2.id, visible_w2)

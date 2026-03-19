@@ -142,7 +142,7 @@ def world_timeline(request, world_id):
 		return _deny_world_access(request, DENY_REASON_WORLD_VIEW_FORBIDDEN)
 
 	base_posts = (
-		Post.objects.filter(world=world)
+		Post.objects.filter(world=world, author__is_active=True)
 		.select_related('character', 'author')
 		.order_by('-created_at', '-id')
 	)
