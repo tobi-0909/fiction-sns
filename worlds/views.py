@@ -135,19 +135,53 @@ def world_create(request):
 
 
 def world_timeline(request, world_id):
+	"""
+	World のタイムラインを取得・表示（カーソルベースページング）
+	
+	【性能ガイド】
+	- 関連ドキュメント: docs/TIMELINE_ARCHITECTURE.md, docs/TIMELINE_SLO.md
+	- 期待応答時間: p95 < 400ms
+	- 期待クエリ数: 3-5個
+	  ├─ Post 取得: 1 (with WHERE, ORDER BY)
+	  ├─ character/author preload: 0 (select_related で統合)
+	  ├─ ブロック除外: 1 (認証ユーザーのみ)
+	  └─ pagination/encoding: 0 (Python)
+	
+	【パフォーマンス懸念事項】
+	- ❌ ブロック除外（blocked_user_ids）: 毎回クエリ実行
+	  → キャッシュ化候補（#72 参照）
+	- ✅ select_related で character/author join 最適化済み
+	- ✅ idx_post_world_timeline インデックス使用（worlds/migrations/0007）
+	
+	【トラブルシューティング】
+	- 遅延時: docs/PERFORMANCE_RUNBOOK.md::診断ポイント2-5 を実行
+	- ベンチマーク: python manage.py benchmark_timeline --post-count 200 --runs 20
+	"""
 	world = get_object_or_404(World, id=world_id)
 	if not can_view_world(request.user, world):
 		if world.visibility == World.Visibility.PRIVATE:
 			return _deny_world_access(request, DENY_REASON_PRIVATE_WORLD_NOT_MEMBER)
 		return _deny_world_access(request, DENY_REASON_WORLD_VIEW_FORBIDDEN)
 
+	# ================================================================================
+	# [Diagnostic Point 1] Post取得フェーズ（期待: 1クエリ + select_related統合）
+	# ================================================================================
 	base_posts = (
 		Post.objects.filter(world=world, author__is_active=True)
-		.select_related('character', 'author')
-		.order_by('-created_at', '-id')
+		.select_related('character', 'author')  # ✅ character/author join最適化
+		.order_by('-created_at', '-id')  # idx_post_world_timeline インデックス使用
 	)
 	
-	# ブロック相手の投稿を除外する
+	# ================================================================================
+	# [Diagnostic Point 2] ブロック除外フェーズ（期待: 0-1クエリ、キャッシュ対象）
+	# ================================================================================
+	# ⚠️ 懸念: UserBlock.objects.filter(...).values_list() は独立クエリ実行
+	# 改善策: Redis キャッシュで blocked_user_ids を 1 時間キャッシュ（#72）
+	#
+	# 【性能問題時の診断】
+	# ブロック中のユーザー数が多い場合（> 500人）:
+	#   SELECT COUNT(*) FROM users_userblock WHERE blocker_id = {user_id};
+	# を実行して確認。多い場合はメモリキャッシュ化検討。
 	if request.user.is_authenticated:
 		from users.models import UserBlock
 		blocked_user_ids = UserBlock.objects.filter(blocker=request.user).values_list('blocked_id', flat=True)
@@ -157,6 +191,10 @@ def world_timeline(request, world_id):
 	decoded_cursor = _decode_timeline_cursor(current_cursor)
 	if current_cursor and decoded_cursor is None:
 		messages.warning(request, 'タイムラインのカーソルが不正です。先頭から再表示します。')
+	
+	# ================================================================================
+	# [Diagnostic Point 3] カーソルフィルタ（期待: 0クエリ、where句のみ追加）
+	# ================================================================================
 	if decoded_cursor is not None:
 		cursor_datetime, cursor_id = decoded_cursor
 		base_posts = base_posts.filter(
@@ -164,6 +202,12 @@ def world_timeline(request, world_id):
 			| (Q(created_at=cursor_datetime) & Q(id__lt=cursor_id))
 		)
 
+	# ================================================================================
+	# [Diagnostic Point 4] スライス・ページング（期待: 1クエリ実行）
+	# ================================================================================
+	# ⚠️ Python-side slicing で [: TIMELINE_PAGE_SIZE + 1] 実行
+	# SQL: LIMIT 21 (= TIMELINE_PAGE_SIZE + 1) にコンパイル
+	# 詳細: docs/TIMELINE_FETCH_SPEC.md を参照
 	chunk = list(base_posts[: TIMELINE_PAGE_SIZE + 1])
 	has_next = len(chunk) > TIMELINE_PAGE_SIZE
 	posts = chunk[:TIMELINE_PAGE_SIZE]
@@ -172,6 +216,16 @@ def world_timeline(request, world_id):
 		next_cursor = _encode_timeline_cursor(posts[-1])
 
 	post_create_url = reverse('post_create', args=[world.id])
+	
+	# ================================================================================
+	# [Diagnostic Point 5] レスポンス返却（期待: 0SQL、JSON化）
+	# ================================================================================
+	# 【性能問題時の確認】
+	# 実行から此処までのクエリ数: 3-5個（期待値）
+	# クエリが 8個以上の場合は N+1 リスク。
+	# DJANGO_SETTINGS_MODULE=fiction_sns.settings python manage.py shell
+	# >>> from django.db import connection; print(len(connection.queries))
+	# で確認可能。
 	return render(
 		request,
 		'worlds/world_timeline.html',
