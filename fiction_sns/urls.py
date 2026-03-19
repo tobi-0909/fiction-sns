@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from users.views import CustomLoginView, public_profile
+from home.views import tos_view, privacy_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,4 +11,6 @@ urlpatterns = [
     path('worlds/', include('worlds.urls')),
     path('accounts/login/', CustomLoginView.as_view(), name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('tos/', tos_view, name='tos'),
+    path('privacy/', privacy_view, name='privacy'),
 ]

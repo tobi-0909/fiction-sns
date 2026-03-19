@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}利用規約 - fiction SNS{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <h1>利用規約</h1>
+            <hr>
+            
+            <div class="tos-content">
+                {{ tos_content|safe }}
+            </div>
+            
+            <hr>
+            <p class="text-muted small">
+                最終更新: 2026年3月19日
+                <br>
+                <a href="{% url 'privacy' %}">プライバシーポリシー</a> | 
+                <a href="{{ request.META.HTTP_HOST }}/admin/">お問い合わせ</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tos-content h2 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+    }
+    
+    .tos-content h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #333;
+    }
+    
+    .tos-content table {
+        margin: 1rem 0;
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .tos-content table th,
+    .tos-content table td {
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+        text-align: left;
+    }
+    
+    .tos-content table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    
+    .tos-content ul, .tos-content ol {
+        margin-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .tos-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .tos-content blockquote {
+        border-left: 4px solid #007bff;
+        padding-left: 1rem;
+        margin-left: 0;
+        color: #666;
+    }
+</style>
+{% endblock %}

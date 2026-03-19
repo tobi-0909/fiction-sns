@@ -6,3 +6,5 @@ typing_extensions==4.15.0
 gunicorn==22.0.0
 python-dotenv==1.0.1
 django-ratelimit==4.1.0
+Markdown==3.5.2
+
