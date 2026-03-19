@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}投稿を通報する{% endblock %}
+
+{% block content %}
+<section class="hero auth-card">
+  <div class="world-hero-header">
+    <h2>投稿を通報する</h2>
+    <a class="action-link" href="{% url 'world_timeline' post.world.id %}">タイムラインへ戻る</a>
+  </div>
+
+  <div class="post-preview">
+    <p><strong>対象の投稿:</strong></p>
+    <div style="padding: 1rem; background: #f5f5f5; border-radius: 4px; margin: 1rem 0;">
+      <p><em>{{ post.character.name }}</em> (@{{ post.author.handle }})</p>
+      <p>{{ post.text|truncatewords:30 }}</p>
+      <small>{{ post.created_at|date:"Y年m月d日 H:i" }}</small>
+    </div>
+  </div>
+
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">通報する</button>
+  </form>
+
+  <p class="helptext">
+    ご報告ありがとうございます。運営チームが確認し、必要に応じて対応いたします。
+  </p>
+</section>
+{% endblock %}

@@ -14,4 +14,6 @@ urlpatterns = [
     path("u/<str:handle>/unfollow/", views.follow_delete, name="follow_delete"),
     path("u/<str:handle>/follow-accept/", views.follow_accept, name="follow_accept"),
     path("u/<str:handle>/follow-reject/", views.follow_reject, name="follow_reject"),
+    path("u/<int:user_id>/block/", views.block_user, name="block_user"),
+    path("u/<int:user_id>/unblock/", views.unblock_user, name="unblock_user"),
 ]

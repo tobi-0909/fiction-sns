@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.contrib.auth import get_user_model
 
 
 class World(models.Model):
@@ -137,3 +138,68 @@ class Post(models.Model):
 
 	def __str__(self):
 		return f"{self.character.name} in {self.world.title}"
+
+
+class Report(models.Model):
+	class TargetType(models.TextChoices):
+		POST = 'post', 'post'
+		USER = 'user', 'user'
+
+	class Reason(models.TextChoices):
+		SPAM = 'spam', 'spam'
+		ABUSE = 'abuse', 'abuse'
+		NSFW = 'nsfw', 'nsfw'
+		COPYRIGHT = 'copyright', 'copyright'
+		OTHER = 'other', 'other'
+
+	class Status(models.TextChoices):
+		OPEN = 'open', 'open'
+		UNDER_REVIEW = 'under_review', 'under_review'
+		RESOLVED = 'resolved', 'resolved'
+		DISMISSED = 'dismissed', 'dismissed'
+
+	reporter = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='reports_made',
+	)
+	target_type = models.CharField(max_length=20, choices=TargetType.choices)
+	target_post = models.ForeignKey(
+		Post,
+		on_delete=models.CASCADE,
+		null=True,
+		blank=True,
+		related_name='reports',
+	)
+	target_user = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='reports_about',
+	)
+	reason = models.CharField(max_length=20, choices=Reason.choices)
+	description = models.TextField(blank=True)
+	status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+	created_at = models.DateTimeField(auto_now_add=True)
+	reviewed_at = models.DateTimeField(null=True, blank=True)
+	reviewed_by = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='reports_reviewed',
+	)
+
+	class Meta:
+		ordering = ['-created_at']
+		indexes = [
+			models.Index(fields=['status', '-created_at'], name='idx_report_status_time'),
+			models.Index(fields=['reporter', '-created_at'], name='idx_report_reporter'),
+		]
+
+	def __str__(self):
+		target = f'投稿 {self.target_post_id}' if self.target_post else f'ユーザー {self.target_user}'
+		return f'通報: {self.reporter} -> {target} ({self.status})'

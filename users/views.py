@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 
 from django.contrib import messages
+from django.db import models
 from django.db.models import Count
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
@@ -383,9 +384,11 @@ def public_profile(request, handle):
 
 	is_self = request.user.is_authenticated and request.user.pk == profile_user.pk
 	viewer_follow = None
+	viewer_block = None
 	follow_action_blocked_reason = ''
 	if request.user.is_authenticated and not is_self:
 		viewer_follow = Follow.objects.filter(follower=request.user, followee=profile_user).first()
+		viewer_block = UserBlock.objects.filter(blocker=request.user, blocked=profile_user).first()
 		follow_action_blocked_reason = _find_block_reason(request.user, profile_user)
 		if not follow_action_blocked_reason and _is_banned_by_profile_owner(request.user, profile_user):
 			follow_action_blocked_reason = 'このユーザーが管理するWorldでBAN状態のためフォローできません。'
@@ -424,6 +427,7 @@ def public_profile(request, handle):
 			'profile_user': profile_user,
 			'is_self': is_self,
 			'viewer_follow': viewer_follow,
+			'viewer_block': viewer_block,
 			'can_view_profile_details': can_view_profile_details,
 			'follow_action_blocked_reason': follow_action_blocked_reason,
 			'can_view_activity_summary': can_view_activity_summary,
@@ -434,3 +438,40 @@ def public_profile(request, handle):
 			'pending_request_count': pending_request_count,
 		},
 	)
+
+
+@login_required
+def block_user(request, user_id):
+	"""ユーザーをブロックする。"""
+	target_user = get_object_or_404(User, id=user_id)
+	
+	if target_user.id == request.user.id:
+		messages.warning(request, '自分自身はブロックできません。')
+		return redirect('public_profile', handle=target_user.handle)
+	
+	if request.method == 'POST':
+		UserBlock.objects.get_or_create(blocker=request.user, blocked=target_user)
+		
+		# ブロック時に既存のフォロー関係を削除する
+		Follow.objects.filter(
+			models.Q(follower=request.user, followee=target_user) |
+			models.Q(follower=target_user, followee=request.user)
+		).delete()
+		
+		messages.success(request, f'{target_user.handle or target_user.username} をブロックしました。')
+		return redirect('public_profile', handle=target_user.handle)
+	
+	return redirect('public_profile', handle=target_user.handle)
+
+
+@login_required
+def unblock_user(request, user_id):
+	"""ユーザーのブロックを解除する。"""
+	target_user = get_object_or_404(User, id=user_id)
+	
+	if request.method == 'POST':
+		UserBlock.objects.filter(blocker=request.user, blocked=target_user).delete()
+		messages.success(request, f'{target_user.handle or target_user.username} のブロックを解除しました。')
+		return redirect('public_profile', handle=target_user.handle)
+	
+	return redirect('public_profile', handle=target_user.handle)

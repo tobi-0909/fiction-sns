@@ -35,6 +35,20 @@
             <button type="submit" class="action-button">{% if profile_user.is_private_account %}フォローをリクエスト{% else %}フォロー{% endif %}</button>
           </form>
         {% endif %}
+
+        {% if viewer_block %}
+          <form method="post" action="{% url 'unblock_user' profile_user.id %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="secondary-button">ブロック中</button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'block_user' profile_user.id %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="secondary-button" onclick="return confirm('このユーザーをブロックしますか？既存のフォロー関係は削除されます。');">ブロック</button>
+          </form>
+        {% endif %}
+
+        <a class="action-link" href="{% url 'report_user' profile_user.id %}">通報</a>
       {% endif %}
     </div>
   </div>

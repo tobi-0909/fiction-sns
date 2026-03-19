@@ -15,4 +15,6 @@ urlpatterns = [
     path('<int:world_id>/characters/bring-in/', views.character_bring_in, name='character_bring_in'),
     path('<int:world_id>/characters/<int:character_id>/edit/', views.character_edit, name='character_edit'),
     path('<int:world_id>/characters/<int:character_id>/delete/', views.character_delete, name='character_delete'),
+    path('post/<int:post_id>/report/', views.report_post, name='report_post'),
+    path('user/<int:user_id>/report/', views.report_user, name='report_user'),
 ]

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Character, Post, World, WorldMembership, WorldModerationLog
+from .models import Character, Post, World, WorldMembership, WorldModerationLog, Report
 
 
 @admin.register(World)
@@ -36,3 +36,26 @@ class WorldModerationLogAdmin(admin.ModelAdmin):
 	list_display = ('id', 'world', 'actor', 'target_user', 'action', 'created_at')
 	search_fields = ('world__title', 'actor__email', 'actor__handle', 'target_user__email', 'target_user__handle')
 	list_filter = ('action', 'world', 'created_at')
+
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+	list_display = ('id', 'target_type', 'reporter', 'status', 'reason', 'created_at')
+	search_fields = (
+		'reporter__email',
+		'reporter__handle',
+		'target_user__email',
+		'target_user__handle',
+		'target_post__id',
+		'description',
+	)
+	list_filter = ('status', 'reason', 'target_type', 'created_at')
+	readonly_fields = ('created_at', 'reviewed_at')
+	fieldsets = (
+		('通報内容', {
+			'fields': ('reporter', 'target_type', 'target_post', 'target_user', 'reason', 'description'),
+		}),
+		('レビュー', {
+			'fields': ('status', 'reviewed_by', 'created_at', 'reviewed_at'),
+		}),
+	)

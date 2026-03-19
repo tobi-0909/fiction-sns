@@ -337,7 +337,7 @@ class WorldPermissionTests(TestCase):
 		)
 
 	def test_character_bring_in_blocked_for_banned_user(self):
-		"""ban されたユーザーは持ち込み不可。"""
+		"""BAN されたユーザーは持ち込みできない。"""
 		other_world = World.objects.create(
 			title='Other World', owner=self.owner, visibility=World.Visibility.PUBLIC
 		)
@@ -363,7 +363,7 @@ class WorldPermissionTests(TestCase):
 		)
 
 	def test_character_bring_in_blocked_for_kicked_user(self):
-		"""kick されたユーザーは持ち込み不可。"""
+		"""Kick されたユーザーは持ち込みできない。"""
 		other_world = World.objects.create(
 			title='Other World', owner=self.owner, visibility=World.Visibility.PUBLIC
 		)
@@ -385,7 +385,7 @@ class WorldPermissionTests(TestCase):
 		self.assertContains(response, 'このWorldで操作する権限がありません。')
 
 	def test_post_create_fails_for_character_not_in_world(self):
-		"""WorldEntry のないキャラクターでは投稿フォームがバリデーションを弾く。"""
+		"""WorldEntry がないキャラクターは投稿フォームのバリデーションで弾かれる。"""
 		extra_char = Character.objects.create(
 			world=self.private_world, name='Outsider', owner=self.owner
 		)
@@ -398,7 +398,7 @@ class WorldPermissionTests(TestCase):
 		self.assertFalse(Post.objects.filter(text='should fail').exists())
 
 	def test_character_bring_in_accessible_for_non_member_on_public_world(self):
-		"""メンバーシップがない状態でも public World への持ち込みができる。"""
+		"""メンバーシップがない状態でも公開 World への持ち込みができる。"""
 		third_user = User.objects.create_user(
 			username='third', email='third@example.com', password='pass12345', handle='third',
 		)
@@ -421,7 +421,7 @@ class WorldPermissionTests(TestCase):
 		self.assertTrue(
 			CharacterWorldEntry.objects.filter(character=my_character, world=self.public_world).exists()
 		)
-		# 初回持ち込み時に WorldMembership が auto-create されること
+		# 初回持ち込み時に WorldMembership が自動作成されること
 		self.assertTrue(
 			WorldMembership.objects.filter(
 				world=self.public_world,
@@ -431,7 +431,7 @@ class WorldPermissionTests(TestCase):
 		)
 
 	def test_character_bring_in_does_not_overwrite_existing_membership(self):
-		"""既存の membership がある場合は status を上書きしない（kicked/banned が残る）。"""
+		"""既存の membership がある場合は status を上書きしない（Kick/BAN 状態を維持）。"""
 		third_user = User.objects.create_user(
 			username='third2', email='third2@example.com', password='pass12345', handle='third2',
 		)
@@ -444,7 +444,7 @@ class WorldPermissionTests(TestCase):
 		CharacterWorldEntry.objects.create(
 			character=my_character, world=third_world, added_by=third_user,
 		)
-		# 既に active membership を持つユーザーが bring-in しても status は変わらない
+		# 既に active な membership を持つユーザーが持ち込みしても status は変わらない
 		WorldMembership.objects.create(
 			world=self.public_world, user=third_user, status=WorldMembership.Status.ACTIVE,
 		)
@@ -457,11 +457,11 @@ class WorldPermissionTests(TestCase):
 		self.assertEqual(membership.status, WorldMembership.Status.ACTIVE)
 
 	# ------------------------------------------------------------------
-	# Character edit / delete 権限境界テスト (#56)
+	# Character の編集・削除に関する権限境界テスト (#56)
 	# ------------------------------------------------------------------
 
 	def test_character_edit_blocked_for_non_owner_via_direct_url(self):
-		"""他人の Character の編集は direct URL でも拒否される。"""
+		"""他人の Character 編集は direct URL でも拒否される。"""
 		self.client.force_login(self.other)
 		url = reverse('character_edit', args=[self.public_world.id, self.character.id])
 		response = self.client.get(url, follow=True)
@@ -469,7 +469,7 @@ class WorldPermissionTests(TestCase):
 		self.assertContains(response, 'このキャラクターを編集する権限がありません。')
 
 	def test_character_delete_blocked_for_non_owner_via_direct_url(self):
-		"""他人の Character の削除は direct URL でも拒否される。"""
+		"""他人の Character 削除は direct URL でも拒否される。"""
 		self.client.force_login(self.other)
 		url = reverse('character_delete', args=[self.public_world.id, self.character.id])
 		response = self.client.post(url, follow=True)
@@ -500,4 +500,138 @@ class WorldPermissionTests(TestCase):
 		url = reverse('character_edit', args=[self.public_world.id, other_char.id])
 		# other_char.world = other_world だが public_world コンテキストで編集できること
 		response = self.client.get(url)
+		self.assertEqual(response.status_code, 200)
+
+
+class ModerationTests(TestCase):
+	"""通報・ブロック機能のテスト。"""
+
+	def setUp(self):
+		self.reporter = User.objects.create_user(
+			username='reporter',
+			email='reporter@example.com',
+			password='pass12345',
+			handle='reporter',
+		)
+		self.target_user = User.objects.create_user(
+			username='target',
+			email='target@example.com',
+			password='pass12345',
+			handle='target',
+		)
+		self.world = World.objects.create(
+			title='Test World',
+			owner=self.target_user,
+			visibility=World.Visibility.PUBLIC,
+		)
+		self.character = Character.objects.create(
+			world=self.world,
+			name='Test Character',
+			owner=self.target_user,
+		)
+		CharacterWorldEntry.objects.create(
+			character=self.character,
+			world=self.world,
+			added_by=self.target_user,
+		)
+		self.post = Post.objects.create(
+			world=self.world,
+			character=self.character,
+			author=self.target_user,
+			text='Test post',
+		)
+
+	def test_report_post_creates_record(self):
+		"""投稿通報がモデルに記録される。"""
+		self.client.force_login(self.reporter)
+		url = reverse('report_post', args=[self.post.id])
+		response = self.client.post(url, {
+			'reason': 'spam',
+			'description': 'This is spam',
+		}, follow=True)
+		self.assertEqual(response.status_code, 200)
+
+		from .models import Report
+		self.assertTrue(Report.objects.filter(
+			reporter=self.reporter,
+			target_post=self.post,
+			reason='spam',
+		).exists())
+
+	def test_report_user_creates_record(self):
+		"""ユーザー通報がモデルに記録される。"""
+		self.client.force_login(self.reporter)
+		url = reverse('report_user', args=[self.target_user.id])
+		response = self.client.post(url, {
+			'reason': 'abuse',
+			'description': 'Harassment',
+		}, follow=True)
+		self.assertEqual(response.status_code, 200)
+
+		from .models import Report
+		self.assertTrue(Report.objects.filter(
+			reporter=self.reporter,
+			target_user=self.target_user,
+			reason='abuse',
+		).exists())
+
+	def test_blocked_user_posts_not_in_timeline(self):
+		"""ブロック中のユーザーの投稿がタイムラインから除外される。"""
+		from users.models import UserBlock
+
+		# reporter が target_user をブロック
+		UserBlock.objects.create(blocker=self.reporter, blocked=self.target_user)
+
+		# reporter でタイムラインを確認
+		self.client.force_login(self.reporter)
+		url = reverse('world_timeline', args=[self.world.id])
+		response = self.client.get(url)
+
+		# target_user の投稿が表示されない
+		self.assertNotContains(response, 'Test post')
+
+	def test_follow_blocked_user_denied(self):
+		"""ブロック中のユーザーはフォローできない。"""
+		from users.models import UserBlock
+
+		# reporter が target_user をブロック
+		UserBlock.objects.create(blocker=self.reporter, blocked=self.target_user)
+
+		# reporter が target_user をフォローしようとする
+		self.client.force_login(self.reporter)
+		url = reverse('follow_create', args=[self.target_user.handle])
+		response = self.client.post(url, {'next': '/'}, follow=True)
+
+		# メッセージに「ブロック中」が含まれる
+		self.assertContains(response, 'ブロック中のユーザーはフォローできません')
+
+	def test_block_deletes_existing_follows(self):
+		"""ブロック時に既存のフォロー関係が削除される。"""
+		from users.models import Follow, UserBlock
+
+		# reporter が target_user をフォロー
+		Follow.objects.create(
+			follower=self.reporter,
+			followee=self.target_user,
+			status=Follow.Status.ACCEPTED,
+		)
+
+		# reporter が target_user をブロック
+		self.client.force_login(self.reporter)
+		url = reverse('block_user', args=[self.target_user.id])
+		response = self.client.post(url, follow=True)
+		self.assertEqual(response.status_code, 200)
+
+		# フォロー関係が削除されている
+		self.assertFalse(Follow.objects.filter(
+			follower=self.reporter,
+			followee=self.target_user,
+		).exists())
+
+		# ブロック記録が存在する
+		self.assertTrue(UserBlock.objects.filter(
+			blocker=self.reporter,
+			blocked=self.target_user,
+		).exists())
+
 		self.assertEqual(response.status_code, 200)

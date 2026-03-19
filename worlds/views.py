@@ -9,9 +9,10 @@ from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django_ratelimit.decorators import ratelimit
 
-from .forms import CharacterForm, ModerationActionForm, PostForm, WorldForm
-from .models import Character, CharacterWorldEntry, Post, World, WorldMembership, WorldModerationLog
+from .forms import CharacterForm, ModerationActionForm, PostForm, WorldForm, ReportForm
+from .models import Character, CharacterWorldEntry, Post, World, WorldMembership, WorldModerationLog, Report
 from .permissions import can_post_world, can_view_world
 
 
@@ -145,6 +146,13 @@ def world_timeline(request, world_id):
 		.select_related('character', 'author')
 		.order_by('-created_at', '-id')
 	)
+	
+	# ブロック相手の投稿を除外する
+	if request.user.is_authenticated:
+		from users.models import UserBlock
+		blocked_user_ids = UserBlock.objects.filter(blocker=request.user).values_list('blocked_id', flat=True)
+		base_posts = base_posts.exclude(author_id__in=blocked_user_ids)
+	
 	current_cursor = request.GET.get('cursor', '').strip()
 	decoded_cursor = _decode_timeline_cursor(current_cursor)
 	if current_cursor and decoded_cursor is None:
@@ -180,10 +188,16 @@ def world_timeline(request, world_id):
 
 
 @login_required
+@ratelimit(key='user', rate='20/h', method='POST')
 def post_create(request, world_id):
 	world = get_object_or_404(World, id=world_id)
 	if not can_post_world(request.user, world):
 		return _deny_world_access(request, DENY_REASON_WORLD_ACTION_FORBIDDEN)
+
+	# レート制限超過判定
+	if getattr(request, 'limited', False):
+		messages.warning(request, '投稿が多すぎます。1時間ごとに20投稿までです。')
+		return redirect('world_timeline', world_id=world.id)
 
 	if request.method == 'POST':
 		form = PostForm(request.POST, world=world, user=request.user)
@@ -389,3 +403,48 @@ def character_bring_in(request, world_id):
 		'worlds/character_bring_in.html',
 		{'world': world, 'available_characters': available},
 	)
+
+
+@login_required
+def report_post(request, post_id):
+	"""投稿を通報する。"""
+	post = get_object_or_404(Post, id=post_id)
+	
+	if request.method == 'POST':
+		form = ReportForm(request.POST)
+		if form.is_valid():
+			report = form.save(commit=False)
+			report.reporter = request.user
+			report.target_type = Report.TargetType.POST
+			report.target_post = post
+			report.save()
+			messages.success(request, '投稿を通報しました。ご協力ありがとうございます。')
+			return redirect('world_timeline', world_id=post.world_id)
+	else:
+		form = ReportForm()
+	
+	return render(request, 'worlds/report_form.html', {'form': form, 'post': post})
+
+
+@login_required
+def report_user(request, user_id):
+	"""ユーザーを通報する。"""
+	from django.contrib.auth import get_user_model
+	User = get_user_model()
+	
+	target_user = get_object_or_404(User, id=user_id)
+	
+	if request.method == 'POST':
+		form = ReportForm(request.POST)
+		if form.is_valid():
+			report = form.save(commit=False)
+			report.reporter = request.user
+			report.target_type = Report.TargetType.USER
+			report.target_user = target_user
+			report.save()
+			messages.success(request, 'ユーザーを通報しました。ご協力ありがとうございます。')
+			return redirect('/')
+	else:
+		form = ReportForm()
+	
+	return render(request, 'worlds/report_user_form.html', {'form': form, 'target_user': target_user})

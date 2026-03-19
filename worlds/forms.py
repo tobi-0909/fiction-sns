@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import Character, Post, World, WorldMembership
+from .models import Character, Post, World, WorldMembership, Report
 
 
 User = get_user_model()
@@ -106,3 +106,17 @@ class ModerationActionForm(forms.Form):
                 raise forms.ValidationError('kick は active 状態の参加者にのみ実行できます。')
 
         return cleaned_data
+
+
+class ReportForm(forms.ModelForm):
+	class Meta:
+		model = Report
+		fields = ('reason', 'description')
+		labels = {
+			'reason': '通報理由',
+			'description': '詳細（オプション）',
+		}
+		widgets = {
+			'reason': forms.Select(),
+			'description': forms.Textarea(attrs={'rows': 3, 'placeholder': '具体的な内容を入力してください（任意）'}),
+		}
