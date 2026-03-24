@@ -14,14 +14,33 @@ DEBUG=False python manage.py check --deploy
 # 静的ファイルの集約テスト
 python manage.py collectstatic --noinput
 
-# テスト実行
+# テスト実行（全アプリをテスト）
+python manage.py test
+
+# または、特定のアプリのみテスト（worlds と users アプリ）
 python manage.py test worlds users
+
+# または、特定のテストクラスのみ実行（高速）
+python manage.py test worlds.tests.WorldPermissionTests
 ```
 
 ### 1-2. チェックリスト
 - [ ] `DEBUG=False` で起動エラーがないこと
 - [ ] 静的ファイル（CSS）が正しく collectstatic で集約されること
-- [ ] すべてのテストが成功すること（テスト数: 33+件）
+- [ ] すべてのテストが成功すること（テスト数: 47個）
+  - **注:** `python manage.py test` は初回実行時 30〜60秒かかります（テストDB作成により）
+  - テスト実行の詳細例：
+    ```bash
+    # 全テスト実行（最も安全）
+    python manage.py test
+    
+    # 特定アプリのテスト
+    python manage.py test worlds users
+    
+    # 高速実行（特定テストのみ）
+    python manage.py test worlds.tests.WorldPermissionTests
+    python manage.py test users.tests.PublicProfileTests
+    ```
 
 ## 2. 本番環境設定
 
